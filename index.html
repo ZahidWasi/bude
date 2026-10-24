@@ -1,0 +1,2116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BUD-E — 2-Hour Active Learning Sprint for Class 12 Boards</title>
+  
+  <!-- Favicon using BUD-E Logo -->
+  <link rel="icon" type="image/png" href="assets/logo.png?v=2">
+
+  <!-- Inter Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+  <!-- KaTeX for crisp LaTeX formula rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+  <!-- Razorpay Checkout SDK -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+  <!-- Core Stylesheet with Palette Tokens -->
+  <link rel="stylesheet" href="css/styles.css?v=20261024v4">
+</head>
+<body>
+
+  <!-- Full-Page Background Video & Overlay -->
+  <div class="video-bg-container" aria-hidden="true">
+    <video id="site-bg-video" autoplay muted loop playsinline webkit-playsinline x5-playsinline preload="auto">
+      <source src="assets/new_vid.mp4?v=20261015" type="video/mp4">
+    </video>
+    <div class="video-bg-overlay"></div>
+  </div>
+
+  <!-- Floating Audio Mute/Unmute Controller -->
+  <button id="btn-audio-toggle" class="audio-toggle-btn" onclick="BUDE_APP.toggleBackgroundAudio()" aria-label="Toggle Sound" title="Click to play or mute sound">
+    <span id="audio-toggle-icon">🔇</span>
+    <span id="audio-toggle-text">Sound: Off</span>
+  </button>
+
+  <!-- Navigation Bar -->
+  <header class="site-header">
+    <div class="container nav-container">
+      <a href="#home" class="nav-brand" aria-label="BUD-E Home">
+        <img src="assets/logo.png?v=2" alt="BUD-E Logo" class="nav-logo" width="40" height="40">
+        <span class="nav-wordmark">BUD-E</span>
+      </a>
+      <nav class="nav-links">
+        <a href="#problem" class="nav-link">The Problem</a>
+        <a href="#how-it-works" class="nav-link">5-Stage Flow</a>
+        <a href="#proof-preview" class="nav-link">Proof of Learning</a>
+        <a href="#revision-notes" class="nav-link">Revision Notes</a>
+        <a href="#question-bank" class="nav-link">CBSE Question Bank</a>
+        <a href="#plans" class="nav-link" onclick="BUDE_APP.openPricingModal(event)">Pricing</a>
+        <a href="#feedback-section" class="nav-link">Feedback</a>
+        <span id="nav-user-badge" class="nav-tier-badge" onclick="BUDE_APP.handleNavUserClick()" title="View Account & Sprints">Sprint 1 · Free</span>
+        <button id="btn-nav-start" class="btn btn-primary" onclick="BUDE_APP.openOnboarding()">Start 2h Sprint</button>
+      </nav>
+
+      <!-- Mobile Navigation Header Actions -->
+      <div class="nav-mobile-actions">
+        <button id="btn-mobile-nav-start" class="btn btn-primary nav-mobile-quick-btn" onclick="BUDE_APP.openOnboarding()">Start Sprint</button>
+        <button id="btn-mobile-nav-toggle" class="mobile-nav-toggle" aria-label="Toggle navigation menu" onclick="BUDE_APP.toggleMobileNav()">
+          <span class="hamburger-bar"></span>
+          <span class="hamburger-bar"></span>
+          <span class="hamburger-bar"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Navigation Drawer Dropdown -->
+    <div id="nav-mobile-dropdown" class="nav-mobile-dropdown" aria-hidden="true">
+      <div class="mobile-dropdown-inner">
+        <div class="mobile-dropdown-user-row">
+          <span id="nav-mobile-user-badge" class="nav-tier-badge" onclick="BUDE_APP.handleNavUserClick()" title="View Account & Sprints">Sprint 1 · Free</span>
+          <button class="btn btn-primary btn-sm" onclick="BUDE_APP.openOnboarding(); BUDE_APP.closeMobileNav();">Start 2h Sprint</button>
+        </div>
+        <div class="mobile-dropdown-links">
+          <a href="#revision-notes" class="mobile-nav-link" onclick="BUDE_APP.closeMobileNav()">
+            <span class="mobile-link-icon">📝</span> Revision Notes
+          </a>
+          <a href="#question-bank" class="mobile-nav-link" onclick="BUDE_APP.closeMobileNav()">
+            <span class="mobile-link-icon">📚</span> CBSE Question Bank
+          </a>
+          <a href="#plans" class="mobile-nav-link" onclick="BUDE_APP.openPricingModal(event); BUDE_APP.closeMobileNav();">
+            <span class="mobile-link-icon">💎</span> Pricing &amp; Plans
+          </a>
+          <a href="#problem" class="mobile-nav-link" onclick="BUDE_APP.closeMobileNav()">
+            <span class="mobile-link-icon">🎯</span> The Problem
+          </a>
+          <a href="#how-it-works" class="mobile-nav-link" onclick="BUDE_APP.closeMobileNav()">
+            <span class="mobile-link-icon">⚡</span> 5-Stage Flow
+          </a>
+          <a href="#proof-preview" class="mobile-nav-link" onclick="BUDE_APP.closeMobileNav()">
+            <span class="mobile-link-icon">📜</span> Proof of Learning
+          </a>
+          <a href="#feedback-section" class="mobile-nav-link" onclick="BUDE_APP.closeMobileNav()">
+            <span class="mobile-link-icon">💬</span> Feedback &amp; Suggestions
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main View Area -->
+  <main id="app-root">
+    
+    <!-- ==========================================
+         HOMEPAGE VIEW
+         ========================================== -->
+    <div id="view-homepage" class="view-section active">
+      
+      <!-- Hero Section -->
+      <section id="home" class="hero-section fade-rise">
+        <div class="container text-center">
+          <div class="hero-logo-wrapper">
+            <img src="assets/logo.png?v=2" alt="BUD-E Robot Study Buddy" class="hero-logo" width="74" height="74">
+          </div>
+          <div class="hero-tag-pill">
+            <span class="tag-dot"></span> Class 12 CBSE &amp; Boards Exam Sprint Tool
+          </div>
+          <h1 class="hero-headline">
+            <span class="hero-brand-title">BUD-E</span>
+            <span class="hero-tagline">Your last-minute learning and revision partner.</span>
+          </h1>
+          <p class="hero-subhead">
+            When you’ve got loads of chapters to cover and just one day left for the exam — don’t worry. You’ve got BUD-E.
+          </p>
+          <div class="hero-cta-group">
+            <button class="btn btn-primary btn-large" onclick="BUDE_APP.openOnboarding()">
+              Start Learning Sprint
+            </button>
+            <a href="#how-it-works" class="btn btn-secondary btn-large">
+              Explore 5 Stages
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- What is BUD-E? Section -->
+      <section id="what-is-bude" class="what-is-section fade-rise">
+        <div class="container text-center">
+          <div class="what-is-card">
+            <div class="section-badge-wrapper text-center">
+              <span class="pill pill-brand">Overview</span>
+            </div>
+            <h2 class="section-title text-center" style="margin-bottom: 1.25rem;">
+              What is BUD-E?
+            </h2>
+            <p class="what-is-text">
+              BUD-E is a quick learning platform that helps you <span class="acronym-letter">B</span>uild, <span class="acronym-letter">U</span>nderstand, <span class="acronym-letter">D</span>rill, and <span class="acronym-letter">E</span>valuate. It is designed to help you <u>study or revise a topic from scratch</u> right before your exams.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- The Problem BUD-E Solves Section -->
+      <section id="problem" class="problem-section fade-rise">
+        <div class="container">
+          <div class="section-badge-wrapper text-center">
+            <span class="pill pill-warning">The Night-Before Dilemma</span>
+          </div>
+          <h2 class="section-title text-center">
+            The Problem BUD-E Solves
+          </h2>
+
+          <!-- The 3 Problem Gaps -->
+          <div class="gaps-grid">
+            <div class="gap-card">
+              <div class="gap-number">01</div>
+              <h3 class="gap-title">Passive Watching</h3>
+              <p class="gap-description">
+                Watching a teacher solve problems creates an illusion of competence. You understand it while watching the video, but when you sit with a blank sheet of paper, you can't solve it alone.
+              </p>
+              <div class="gap-reality-callout">
+                <strong>The reality:</strong> Every year, lakhs of students watch 5–6 hour one-shot lectures the night before their exam. They feel productive, but walk into the exam hall unable to solve problems independently. Watching is passive; exams test active recall.
+              </div>
+            </div>
+            <div class="gap-card">
+              <div class="gap-number">02</div>
+              <h3 class="gap-title">No Diagnostic Calibration</h3>
+              <p class="gap-description">
+                Every student has different academic needs. Some need to just brush up on a topic, while others have to learn it from scratch. Studying basic theory when you already know it wastes your crucial night-before hours. You need targeted practice on your actual weak spots.
+              </p>
+            </div>
+            <div class="gap-card">
+              <div class="gap-number">03</div>
+              <h3 class="gap-title">Zero Accountability</h3>
+              <p class="gap-description">
+                Getting distracted by Instagram or giving up halfway through leaves you unprepared and panicked for tomorrow's test.
+              </p>
+            </div>
+          </div>
+
+          <!-- The BUD-E Solution Card -->
+          <div class="bude-solution-card">
+            <span class="solution-badge-pill">✓ The BUD-E Solution</span>
+            <p class="solution-text">
+              To solve these problems, learning on BUD-E takes place in a highly structured manner. First, we separate students based on how much of the chapter they already know and how much time they can dedicate. Then, we guide you through the 5-Stage Learning Sprint—a scientifically backed method for rapid retention and active recall.
+            </p>
+          </div>
+
+          <!-- BUD-E Protects You From -->
+          <div class="protects-section-wrap text-center">
+            <h3 class="protects-heading">BUD-E protects you from:</h3>
+            <div class="protects-grid">
+              <div class="protect-card">
+                <div class="protect-icon">🛡️</div>
+                <h4 class="protect-title">Last-minute exam panic</h4>
+                <p class="protect-sub">Structured micro-steps that eliminate panic and keep you calm.</p>
+              </div>
+              <div class="protect-card">
+                <div class="protect-icon">⏱️</div>
+                <h4 class="protect-title">Wasting time on irrelevant content</h4>
+                <p class="protect-sub">Targeted practice focused exclusively on your specific weak spots.</p>
+              </div>
+              <div class="protect-card">
+                <div class="protect-icon">💡</div>
+                <h4 class="protect-title">Brain fog in the exam hall</h4>
+                <p class="protect-sub">Active recall drills ensuring real mastery, not passive familiarity.</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- The 5-Stage Active Sprint Flow -->
+      <section id="how-it-works" class="flow-section fade-rise">
+        <div class="container">
+          <div class="section-badge-wrapper text-center">
+            <span class="pill pill-brand">Structured Cognitive Progression</span>
+          </div>
+          <h2 class="section-title text-center">
+            The 5-Stage Active Sprint Flow
+          </h2>
+          <p class="section-subtitle text-center">
+            Every sprint follows a strict cognitive progression engineered for exam retention.
+          </p>
+
+          <div class="stages-timeline">
+            <!-- Stage 1 -->
+            <div class="stage-timeline-card stage-tint-calibrate">
+              <div class="stage-badge-pill">Stage 1</div>
+              <h3 class="stage-name">Calibrate</h3>
+              <p class="stage-desc">
+                10 quick diagnostic questions to pinpoint your knowledge band (Foundation / Intermediate / Advanced).
+              </p>
+            </div>
+
+            <!-- Stage 2 -->
+            <div class="stage-timeline-card stage-tint-learn">
+              <div class="stage-badge-pill">Stage 2</div>
+              <h3 class="stage-name">Learn</h3>
+              <p class="stage-desc">
+                Targeted one-shot YouTube timestamps &amp; key formulas tailored to your weak spots.
+              </p>
+            </div>
+
+            <!-- Stage 3 -->
+            <div class="stage-timeline-card stage-tint-practice">
+              <div class="stage-badge-pill">Stage 3</div>
+              <h3 class="stage-name">Practice</h3>
+              <p class="stage-desc">
+                15-40 time-budgeted practice questions with confidence tagging &amp; instant micro-explanations.
+              </p>
+            </div>
+
+            <!-- Stage 4 -->
+            <div class="stage-timeline-card stage-tint-test">
+              <div class="stage-badge-pill">Stage 4</div>
+              <h3 class="stage-name">Test</h3>
+              <p class="stage-desc">
+                Timed exam simulation with zero hints to test true problem-solving mastery.
+              </p>
+            </div>
+
+            <!-- Stage 5 -->
+            <div class="stage-timeline-card stage-tint-recall">
+              <div class="stage-badge-pill">Stage 5</div>
+              <h3 class="stage-name">Recall</h3>
+              <p class="stage-desc">
+                High-yield flashcards &amp; error-specific notes for last-minute revision.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Proof of Learning Live Interactive Preview -->
+      <section id="proof-preview" class="preview-section fade-rise">
+        <div class="container">
+          <div class="section-badge-wrapper text-center">
+            <span class="pill pill-brand">Exam-Ready Verification</span>
+          </div>
+          <h2 class="section-title text-center">
+            The "Proof of Learning" Shareable Card
+          </h2>
+          <p class="section-subtitle text-center">
+            Walk into your exam hall confident. At the end of every sprint, BUD-E generates a clean, attractive, screenshot-ready card verified against rigorous board standards.
+          </p>
+
+          <div class="preview-card-outer">
+            <div class="pol-card" id="demo-pol-card">
+              <div class="pol-header">
+                <div class="pol-brand-wrap">
+                  <img src="assets/logo.png?v=2" alt="BUD-E Logo" class="pol-logo">
+                  <div>
+                    <div class="pol-app-title">BUD-E SPRINT VERIFIED</div>
+                    <div class="pol-date" id="demo-card-date">OCTOBER 7, 2026</div>
+                  </div>
+                </div>
+                <div class="badge-can-solve">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  CAN SOLVE
+                </div>
+              </div>
+
+              <div class="pol-body">
+                <div class="pol-student">
+                  <span class="pol-label">STUDENT</span>
+                  <div class="pol-name">Arnav Kumar</div>
+                </div>
+                <div class="pol-topic">
+                  <span class="pol-label">TOPIC &amp; SPRINT DURATION</span>
+                  <div class="pol-topic-title">Physics: Electric Charges and Fields</div>
+                  <div class="pol-duration-text">2 Hours Dedicated Active Sprint</div>
+                </div>
+
+                <div class="pol-metrics-grid">
+                  <div class="metric-box">
+                    <span class="metric-label">TEST SCORE</span>
+                    <div class="metric-value"><span class="score-high">9</span> / 10</div>
+                  </div>
+                  <div class="metric-box">
+                    <span class="metric-label">CONFIDENCE METER</span>
+                    <div class="metric-value">92%</div>
+                  </div>
+                  <div class="metric-box">
+                    <span class="metric-label">CALIBRATION LEVEL</span>
+                    <div class="metric-value" style="color: var(--color-level-advanced);">Advanced</div>
+                  </div>
+                </div>
+
+                <div class="pol-error-summary">
+                  <div class="error-pill error-silly">Silly Mistakes: 1</div>
+                  <div class="error-pill error-concept">Concept Gaps: 0</div>
+                  <div class="error-pill error-guess">Guesses: 0</div>
+                </div>
+              </div>
+
+              <div class="pol-footer">
+                <span class="pol-footer-brand">BUD-E · Build · Understand · Drill · Evaluate</span>
+                <span class="pol-footer-badge">Class 12 Board Sprint</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           WHY BUD-E STANDS OUT SECTION
+           ========================================== -->
+      <section id="why-bude" class="standout-section fade-rise">
+        <div class="container">
+          <div class="section-badge-wrapper text-center">
+            <span class="pill pill-brand">The BUD-E Advantage</span>
+          </div>
+          <h2 class="section-title text-center">
+            Why BUD-E Stands Out
+          </h2>
+          <p class="section-subtitle text-center">
+            Engineered from cognitive science principles to deliver maximum score improvement in minimum time.
+          </p>
+
+          <div class="standout-grid">
+            <!-- 1. Diagnostic Calibration -->
+            <div class="standout-card">
+              <div class="standout-card-header">
+                <span class="standout-num">01</span>
+                <span class="standout-icon">🎯</span>
+                <h3 class="standout-title">Diagnostic Calibration</h3>
+              </div>
+              <p class="standout-desc">
+                Unlike traditional edtech apps, BUD-E doesn't feed the same material to every student. Our initial calibration round understands your specific requirements and plans your academic sprint accordingly.
+              </p>
+            </div>
+
+            <!-- 2. Active Participation -->
+            <div class="standout-card">
+              <div class="standout-card-header">
+                <span class="standout-num">02</span>
+                <span class="standout-icon">⚡</span>
+                <h3 class="standout-title">Active Participation</h3>
+              </div>
+              <p class="standout-desc">
+                On BUD-E, you don't just watch lectures like a movie. Detailed lectures are immediately followed by practice questions and tests, allowing you to actually master concepts.
+              </p>
+            </div>
+
+            <!-- 3. Active Recall -->
+            <div class="standout-card">
+              <div class="standout-card-header">
+                <span class="standout-num">03</span>
+                <span class="standout-icon">🧠</span>
+                <h3 class="standout-title">Active Recall</h3>
+              </div>
+              <p class="standout-desc">
+                Short notes, exam tips, and flashcards after every chapter ensure you have a clear picture of the topic before you walk into the exam.
+              </p>
+            </div>
+
+            <!-- 4. Parent Participation -->
+            <div class="standout-card">
+              <div class="standout-card-header">
+                <span class="standout-num">04</span>
+                <span class="standout-icon">👨‍👩‍👧</span>
+                <h3 class="standout-title">Parent Participation</h3>
+              </div>
+              <p class="standout-desc">
+                Your parents play an equally important role in your preparation. BUD-E features an inbuilt break timer that prompts you every 45 minutes. If you don't return to your study sprint within the given time, the app automatically sends a notification to your parents.
+              </p>
+            </div>
+
+            <!-- 5. Less Clutter, More Focus -->
+            <div class="standout-card">
+              <div class="standout-card-header">
+                <span class="standout-num">05</span>
+                <span class="standout-icon">🚀</span>
+                <h3 class="standout-title">Less Clutter, More Focus</h3>
+              </div>
+              <p class="standout-desc">
+                With BUD-E, you don't need 10 separate apps for lectures, practice questions, tests, and notes. We bring all your diverse resources into one seamless platform, keeping you panic-free on exam nights.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           CLASS 12 REVISION NOTES SECTION
+           ========================================== -->
+      <section id="revision-notes" class="revision-notes-section fade-rise">
+        <div class="container">
+          <div class="section-badge-wrapper text-center">
+            <span class="pill pill-brand">Class 12 Exam Revision</span>
+          </div>
+          <h2 class="section-title text-center">
+            Class 12 Comprehensive Revision Notes
+          </h2>
+          <p class="section-subtitle text-center">
+            High-yield, chapter-wise revision notes across Science, Commerce, and Languages. Review key concepts and formulas online or download the full PDFs for last-minute exam prep.
+          </p>
+
+          <!-- Stream Filter Bar -->
+          <div class="rn-filter-bar">
+            <button class="rn-filter-pill active" onclick="BUDE_APP.filterRevisionNotes('all', this)">All Subjects (10)</button>
+            <button class="rn-filter-pill" onclick="BUDE_APP.filterRevisionNotes('science', this)">Science</button>
+            <button class="rn-filter-pill" onclick="BUDE_APP.filterRevisionNotes('commerce', this)">Commerce</button>
+            <button class="rn-filter-pill" onclick="BUDE_APP.filterRevisionNotes('tech-lang', this)">Languages &amp; Tech</button>
+          </div>
+
+          <!-- Revision Notes Cards Grid -->
+          <div class="rn-grid" id="rn-grid">
+            
+            <!-- 1. Physics -->
+            <div class="rn-card active-preview" data-subject="physics" data-stream="science">
+              <div>
+                <div class="rn-card-top">
+                  <div class="rn-icon">⚛️</div>
+                  <div>
+                    <h3 class="rn-subject-name">Physics</h3>
+                    <span class="rn-subject-code">CBSE Code 042 · Class XII</span>
+                  </div>
+                </div>
+                <div class="rn-card-meta">
+                  <span class="rn-tag">Science Core</span>
+                  <span class="rn-size">5.8 MB PDF</span>
+                </div>
+              </div>
+              <div class="rn-card-btns">
+                <button type="button" class="btn btn-primary" onclick="BUDE_APP.loadRevisionNotes('physics', true)">📖 Read Online</button>
+                <a href="assets/notes/Class_12_Physics_Revision_Notes.pdf" target="_blank" download="Class_12_Physics_Revision_Notes.pdf" class="btn btn-secondary">⬇️ PDF</a>
+              </div>
+            </div>
+
+            <!-- 2. Chemistry -->
+            <div class="rn-card" data-subject="chemistry" data-stream="science">
+              <div>
+                <div class="rn-card-top">
+                  <div class="rn-icon">🧪</div>
+                  <div>
+                    <h3 class="rn-subject-name">Chemistry</h3>
+                    <span class="rn-subject-code">CBSE Code 043 · Class XII</span>
+                  </div>
+                </div>
+                <div class="rn-card-meta">
+                  <span class="rn-tag">Science Core</span>
+                  <span class="rn-size">17.1 MB PDF</span>
+                </div>
+              </div>
+              <div class="rn-card-btns">
+                <button type="button" class="btn btn-primary" onclick="BUDE_APP.loadRevisionNotes('chemistry', true)">📖 Read Online</button>
+                <a href="assets/notes/Class_12_Chemistry_Revision_Notes.pdf" target="_blank" download="Class_12_Chemistry_Revision_Notes.pdf" class="btn btn-secondary">⬇️ PDF</a>
+              </div>
+            </div>
+
+            <!-- 3. Mathematics -->
+            <div class="rn-card" data-subject="mathematics" data-stream="science commerce">
+              <div>
+                <div class="rn-card-top">
+                  <div class="rn-icon">📐</div>
+                  <div>
+                    <h3 class="rn-subject-name">Mathematics</h3>
+                    <span class="rn-subject-code">CBSE Code 041 · Class XII</span>
+                  </div>
+                </div>
+                <div class="rn-card-meta">
+                  <span class="rn-tag">Science &amp; Commerce</span>
+                  <span class="rn-size">5.2 MB PDF</span>
+                </div>
+              </div>
+              <div class="rn-card-btns">
+                <button type="button" class="btn btn-primary" onclick="BUDE_APP.loadRevisionNotes('mathematics', true)">📖 Read Online</button>
+                <a href="assets/notes/Class_12_Mathematics_Revision_Notes.pdf" target="_blank" download="Class_12_Mathematics_Revision_Notes.pdf" class="btn btn-secondary">⬇️ PDF</a>
+              </div>
+            </div>
+
+            <!-- 4. Biology -->
+            <div class="rn-card" data-subject="biology" data-stream="science">
+              <div>
+                <div class="rn-card-top">
+                  <div class="rn-icon">🧬</div>
+                  <div>
+                    <h3 class="rn-subject-name">Biology</h3>
+                    <span class="rn-subject-code">CBSE Code 044 · Class XII</span>
+                  </div>
+                </div>
+                <div class="rn-card-meta">
+                  <span class="rn-tag">Medical Science</span>
+                  <span class="rn-size">9.5 MB PDF</span>
+                </div>
+              </div>
+              <div class="rn-card-btns">
+                <button type="button" class="btn btn-primary" onclick="BUDE_APP.loadRevisionNotes('biology', true)">📖 Read Online</button>
+                <a href="assets/notes/Class_12_Biology_Revision_Notes.pdf" target="_blank" download="Class_12_Biology_Revision_Notes.pdf" class="btn btn-secondary">⬇️ PDF</a>
+              </div>
+            </div>
+
+            <!-- 5. Computer Science -->
+            <div class="rn-card" data-subject="computerscience" data-stream="science tech-lang">
+              <div>
+                <div class="rn-card-top">
+                  <div class="rn-icon">💻</div>
+                  <div>
+                    <h3 class="rn-subject-name">Computer Science</h3>
+                    <span class="rn-subject-code">CBSE Code 083 · Python &amp; SQL</span>
+                  </div>
+                </div>
+                <div class="rn-card-meta">
+                  <span class="rn-tag">CS &amp; Tech</span>
+                  <span class="rn-size">2.7 MB PDF</span>
+                </div>
+              </div>
+              <div class="rn-card-btns">
+                <button type="button" class="btn btn-primary" onclick="BUDE_APP.loadRevisionNotes('computerscience', true)">📖 Read Online</button>
+                <a href="assets/notes/Class_12_CS_Notes.pdf" target="_blank" download="Class_12_CS_Notes.pdf" class="btn btn-secondary">⬇️ PDF</a>
+              </div>
+            </div>
+
+            <!-- 6. Accountancy -->
+            <div class="rn-card" data-subject="accountancy" data-stream="commerce">
+              <div>
+                <div class="rn-card-top">
+                  <div class="rn-icon">📊</div>
+                  <div>
+                    <h3 class="rn-subject-name">Accountancy</h3>
+                    <span class="rn-subject-code">CBSE Code 055 · Class XII</span>
+                  </div>
+                </div>
+                <div class="rn-card-meta">
+                  <span class="rn-tag">Commerce Core</span>
+                  <span class="rn-size">6.4 MB PDF</span>
+                </div>
+              </div>
+              <div class="rn-card-btns">
+                <button type="button" class="btn btn-primary" onclick="BUDE_APP.loadRevisionNotes('accountancy', true)">📖 Read Online</button>
+                <a href="assets/notes/Class_12_Accountancy_Revision_Notes.pdf" target="_blank" download="Class_12_Accountancy_Revision_Notes.pdf" class="btn btn-secondary">⬇️ PDF</a>
+              </div>
+            </div>
+
+            <!-- 7. Business Studies -->
+            <div class="rn-card" data-subject="businessstudies" data-stream="commerce">
+              <div>
+                <div class="rn-card-top">
+                  <div class="rn-icon">💼</div>
+                  <div>
+                    <h3 class="rn-subject-name">Business Studies</h3>
+                    <span class="rn-subject-code">CBSE Code 054 · Class XII</span>
+                  </div>
+                </div>
+                <div class="rn-card-meta">
+                  <span class="rn-tag">Commerce Core</span>
+                  <span class="rn-size">4.9 MB PDF</span>
+                </div>
+              </div>
+              <div class="rn-card-btns">
+                <button type="button" class="btn btn-primary" onclick="BUDE_APP.loadRevisionNotes('businessstudies', true)">📖 Read Online</button>
+                <a href="assets/notes/Class_12_Business_Studies_Revision_Notes.pdf" target="_blank" download="Class_12_Business_Studies_Revision_Notes.pdf" class="btn btn-secondary">⬇️ PDF</a>
+              </div>
+            </div>
+
+            <!-- 8. Economics -->
+            <div class="rn-card" data-subject="economics" data-stream="commerce tech-lang">
+              <div>
+                <div class="rn-card-top">
+                  <div class="rn-icon">📈</div>
+                  <div>
+                    <h3 class="rn-subject-name">Economics</h3>
+                    <span class="rn-subject-code">CBSE Code 030 · Class XII</span>
+                  </div>
+                </div>
+                <div class="rn-card-meta">
+                  <span class="rn-tag">Commerce &amp; Arts</span>
+                  <span class="rn-size">3.7 MB PDF</span>
+                </div>
+              </div>
+              <div class="rn-card-btns">
+                <button type="button" class="btn btn-primary" onclick="BUDE_APP.loadRevisionNotes('economics', true)">📖 Read Online</button>
+                <a href="assets/notes/Class_12_Economics_Revision_Notes.pdf" target="_blank" download="Class_12_Economics_Revision_Notes.pdf" class="btn btn-secondary">⬇️ PDF</a>
+              </div>
+            </div>
+
+            <!-- 9. English Core -->
+            <div class="rn-card" data-subject="englishcore" data-stream="tech-lang">
+              <div>
+                <div class="rn-card-top">
+                  <div class="rn-icon">📖</div>
+                  <div>
+                    <h3 class="rn-subject-name">English Core</h3>
+                    <span class="rn-subject-code">CBSE Code 301 · Class XII</span>
+                  </div>
+                </div>
+                <div class="rn-card-meta">
+                  <span class="rn-tag">Core All Streams</span>
+                  <span class="rn-size">2.9 MB PDF</span>
+                </div>
+              </div>
+              <div class="rn-card-btns">
+                <button type="button" class="btn btn-primary" onclick="BUDE_APP.loadRevisionNotes('englishcore', true)">📖 Read Online</button>
+                <a href="assets/notes/Class_12_English_Revision_Notes.pdf" target="_blank" download="Class_12_English_Revision_Notes.pdf" class="btn btn-secondary">⬇️ PDF</a>
+              </div>
+            </div>
+
+            <!-- 10. Informatics Practices -->
+            <div class="rn-card" data-subject="informaticspractices" data-stream="tech-lang">
+              <div>
+                <div class="rn-card-top">
+                  <div class="rn-icon">🖥️</div>
+                  <div>
+                    <h3 class="rn-subject-name">Informatics Practices</h3>
+                    <span class="rn-subject-code">CBSE Code 065 · Class XII</span>
+                  </div>
+                </div>
+                <div class="rn-card-meta">
+                  <span class="rn-tag">Tech &amp; Data</span>
+                  <span class="rn-size">2.5 MB PDF</span>
+                </div>
+              </div>
+              <div class="rn-card-btns">
+                <button type="button" class="btn btn-primary" onclick="BUDE_APP.loadRevisionNotes('informaticspractices', true)">📖 Read Online</button>
+                <a href="assets/notes/Class_12_IP_Revision_Notes.pdf" target="_blank" download="Class_12_IP_Revision_Notes.pdf" class="btn btn-secondary">⬇️ PDF</a>
+              </div>
+            </div>
+
+          </div><!-- End .rn-grid -->
+
+          <!-- Interactive Embedded Revision Notes PDF Viewer Pane -->
+          <div class="rn-viewer-card card" id="rn-viewer-card">
+            <div class="rn-viewer-header">
+              <div class="rn-viewer-info">
+                <span class="rn-viewer-badge">Revision Notes Viewer</span>
+                <h3 id="rn-active-title" class="rn-viewer-title">Physics — Class XII Comprehensive Revision Notes</h3>
+                <span id="rn-active-meta" class="rn-viewer-meta">Quick Revision Guide · 5.8 MB PDF · Formulas, Derivations &amp; Key Concepts</span>
+              </div>
+              <div class="rn-viewer-actions">
+                <a id="rn-download-btn" href="assets/notes/Class_12_Physics_Revision_Notes.pdf" download="Class_12_Physics_Revision_Notes.pdf" class="btn btn-secondary btn-sm" title="Download this PDF to your computer">
+                  ⬇️ Download PDF
+                </a>
+                <a id="rn-newtab-btn" href="assets/notes/Class_12_Physics_Revision_Notes.pdf" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm" title="Open full screen in a new browser tab">
+                  ↗️ Open in New Tab
+                </a>
+              </div>
+            </div>
+            
+            <div class="rn-iframe-wrapper">
+              <iframe id="rn-pdf-frame" src="assets/notes/Class_12_Physics_Revision_Notes.pdf" title="Class 12 Revision Notes Document"></iframe>
+            </div>
+            
+            <div class="text-center" style="padding: 1.25rem; background: rgba(248, 250, 252, 0.9); border-top: 1px solid var(--color-line);">
+              <span class="text-soft" style="font-size: 0.85rem; font-weight: 500;">
+                💡 Viewing on mobile or smaller screen? Tap <strong>"↗️ Open in New Tab"</strong> to read full screen with native pinch-to-zoom.
+              </span>
+            </div>
+          </div><!-- End .rn-viewer-card -->
+
+        </div>
+      </section>
+
+      <!-- ==========================================
+           OFFICIAL CBSE QUESTION BANK SECTION
+           ========================================== -->
+      <section id="question-bank" class="question-bank-section fade-rise">
+        <div class="container">
+          <div class="section-badge-wrapper text-center">
+            <span class="pill pill-brand">Official CBSE Resources</span>
+          </div>
+          <h2 class="section-title text-center">
+            Official CBSE Class 12 Question Bank
+          </h2>
+          <p class="section-subtitle text-center">
+            Comprehensive question banks issued by the Central Board of Secondary Education for Class 12. Browse all subjects, read chapter-wise questions directly on the page, or download the official PDFs.
+          </p>
+
+          <!-- Stream Filter Bar -->
+          <div class="qb-filter-bar">
+            <button class="qb-filter-pill active" onclick="BUDE_APP.filterQuestionBank('all', this)">All Subjects (10)</button>
+            <button class="qb-filter-pill" onclick="BUDE_APP.filterQuestionBank('science', this)">Science</button>
+            <button class="qb-filter-pill" onclick="BUDE_APP.filterQuestionBank('commerce', this)">Commerce</button>
+            <button class="qb-filter-pill" onclick="BUDE_APP.filterQuestionBank('tech-lang', this)">Languages &amp; Tech</button>
+          </div>
+
+          <!-- Question Bank Cards Grid -->
+          <div class="qb-grid" id="qb-grid">
+            
+            <!-- 1. Physics -->
+            <div class="qb-card active-preview" data-subject="physics" data-stream="science">
+              <div>
+                <div class="qb-card-top">
+                  <div class="qb-icon">⚛️</div>
+                  <div>
+                    <h3 class="qb-subject-name">Physics</h3>
+                    <span class="qb-subject-code">CBSE Code 042 · Class XII</span>
+                  </div>
+                </div>
+                <div class="qb-card-meta">
+                  <span class="qb-tag">Science Core</span>
+                  <span class="qb-size">10.3 MB PDF</span>
+                </div>
+              </div>
+              <div class="qb-card-btns">
+                <button type="button" class="btn btn-primary" onclick="BUDE_APP.loadQuestionBank('physics', true)">📖 Read Online</button>
+                <a href="assets/question-bank/PhysicsXII.pdf" target="_blank" download="PhysicsXII.pdf" class="btn btn-secondary">⬇️ PDF</a>
+              </div>
+            </div>
+
+            <!-- 2. Chemistry -->
+            <div class="qb-card" data-subject="chemistry" data-stream="science">
+              <div>
+                <div class="qb-card-top">
+                  <div class="qb-icon">🧪</div>
+                  <div>
+                    <h3 class="qb-subject-name">Chemistry</h3>
+                    <span class="qb-subject-code">CBSE Code 043 · Class XII</span>
+                  </div>
+                </div>
+                <div class="qb-card-meta">
+                  <span class="qb-tag">Science Core</span>
+                  <span class="qb-size">1.2 MB PDF</span>
+                </div>
+              </div>
+              <div class="qb-card-btns">
+                <button type="button" class="btn btn-primary" onclick="BUDE_APP.loadQuestionBank('chemistry', true)">📖 Read Online</button>
+                <a href="assets/question-bank/ChemistryXII.pdf" target="_blank" download="ChemistryXII.pdf" class="btn btn-secondary">⬇️ PDF</a>
+              </div>
+            </div>
+
+            <!-- 3. Mathematics -->
+            <div class="qb-card" data-subject="mathematics" data-stream="science commerce">
+              <div>
+                <div class="qb-card-top">
+                  <div class="qb-icon">📐</div>
+                  <div>
+                    <h3 class="qb-subject-name">Mathematics</h3>
+                    <span class="qb-subject-code">CBSE Code 041 · Class XII</span>
+                  </div>
+                </div>
+                <div class="qb-card-meta">
+                  <span class="qb-tag">Science &amp; Commerce</span>
+                  <span class="qb-size">1.9 MB PDF</span>
+                </div>
+              </div>
+              <div class="qb-card-btns">
+                <button type="button" class="btn btn-primary" onclick="BUDE_APP.loadQuestionBank('mathematics', true)">📖 Read Online</button>
+                <a href="assets/question-bank/MathematicsXII.pdf" target="_blank" download="MathematicsXII.pdf" class="btn btn-secondary">⬇️ PDF</a>
+              </div>
+            </div>
+
+            <!-- 4. Biology -->
+            <div class="qb-card" data-subject="biology" data-stream="science">
+              <div>
+                <div class="qb-card-top">
+                  <div class="qb-icon">🧬</div>
+                  <div>
+                    <h3 class="qb-subject-name">Biology</h3>
+                    <span class="qb-subject-code">CBSE Code 044 · Class XII</span>
+                  </div>
+                </div>
+                <div class="qb-card-meta">
+                  <span class="qb-tag">Medical Science</span>
+                  <span class="qb-size">647 KB PDF</span>
+                </div>
+              </div>
+              <div class="qb-card-btns">
+                <button type="button" class="btn btn-primary" onclick="BUDE_APP.loadQuestionBank('biology', true)">📖 Read Online</button>
+                <a href="assets/question-bank/BiologyXII.pdf" target="_blank" download="BiologyXII.pdf" class="btn btn-secondary">⬇️ PDF</a>
+              </div>
+            </div>
+
+            <!-- 5. Computer Science -->
+            <div class="qb-card" data-subject="computerscience" data-stream="science tech-lang">
+              <div>
+                <div class="qb-card-top">
+                  <div class="qb-icon">💻</div>
+                  <div>
+                    <h3 class="qb-subject-name">Computer Science</h3>
+                    <span class="qb-subject-code">CBSE Code 083 · Python &amp; SQL</span>
+                  </div>
+                </div>
+                <div class="qb-card-meta">
+                  <span class="qb-tag">CS &amp; Tech</span>
+                  <span class="qb-size">284 KB PDF</span>
+                </div>
+              </div>
+              <div class="qb-card-btns">
+                <button type="button" class="btn btn-primary" onclick="BUDE_APP.loadQuestionBank('computerscience', true)">📖 Read Online</button>
+                <a href="assets/question-bank/ComputerScienceXII.pdf" target="_blank" download="ComputerScienceXII.pdf" class="btn btn-secondary">⬇️ PDF</a>
+              </div>
+            </div>
+
+            <!-- 6. Accountancy -->
+            <div class="qb-card" data-subject="accountancy" data-stream="commerce">
+              <div>
+                <div class="qb-card-top">
+                  <div class="qb-icon">📊</div>
+                  <div>
+                    <h3 class="qb-subject-name">Accountancy</h3>
+                    <span class="qb-subject-code">CBSE Code 055 · Class XII</span>
+                  </div>
+                </div>
+                <div class="qb-card-meta">
+                  <span class="qb-tag">Commerce Core</span>
+                  <span class="qb-size">517 KB PDF</span>
+                </div>
+              </div>
+              <div class="qb-card-btns">
+                <button type="button" class="btn btn-primary" onclick="BUDE_APP.loadQuestionBank('accountancy', true)">📖 Read Online</button>
+                <a href="assets/question-bank/AccountancyXII.pdf" target="_blank" download="AccountancyXII.pdf" class="btn btn-secondary">⬇️ PDF</a>
+              </div>
+            </div>
+
+            <!-- 7. Business Studies -->
+            <div class="qb-card" data-subject="businessstudies" data-stream="commerce">
+              <div>
+                <div class="qb-card-top">
+                  <div class="qb-icon">💼</div>
+                  <div>
+                    <h3 class="qb-subject-name">Business Studies</h3>
+                    <span class="qb-subject-code">CBSE Code 054 · Class XII</span>
+                  </div>
+                </div>
+                <div class="qb-card-meta">
+                  <span class="qb-tag">Commerce Core</span>
+                  <span class="qb-size">946 KB PDF</span>
+                </div>
+              </div>
+              <div class="qb-card-btns">
+                <button type="button" class="btn btn-primary" onclick="BUDE_APP.loadQuestionBank('businessstudies', true)">📖 Read Online</button>
+                <a href="assets/question-bank/BusinessStudiesXII.pdf" target="_blank" download="BusinessStudiesXII.pdf" class="btn btn-secondary">⬇️ PDF</a>
+              </div>
+            </div>
+
+            <!-- 8. Economics -->
+            <div class="qb-card" data-subject="economics" data-stream="commerce tech-lang">
+              <div>
+                <div class="qb-card-top">
+                  <div class="qb-icon">📈</div>
+                  <div>
+                    <h3 class="qb-subject-name">Economics</h3>
+                    <span class="qb-subject-code">CBSE Code 030 · Class XII</span>
+                  </div>
+                </div>
+                <div class="qb-card-meta">
+                  <span class="qb-tag">Commerce &amp; Arts</span>
+                  <span class="qb-size">498 KB PDF</span>
+                </div>
+              </div>
+              <div class="qb-card-btns">
+                <button type="button" class="btn btn-primary" onclick="BUDE_APP.loadQuestionBank('economics', true)">📖 Read Online</button>
+                <a href="assets/question-bank/EconomicsXII.pdf" target="_blank" download="EconomicsXII.pdf" class="btn btn-secondary">⬇️ PDF</a>
+              </div>
+            </div>
+
+            <!-- 9. English Core -->
+            <div class="qb-card" data-subject="englishcore" data-stream="tech-lang">
+              <div>
+                <div class="qb-card-top">
+                  <div class="qb-icon">📖</div>
+                  <div>
+                    <h3 class="qb-subject-name">English Core</h3>
+                    <span class="qb-subject-code">CBSE Code 301 · Class XII</span>
+                  </div>
+                </div>
+                <div class="qb-card-meta">
+                  <span class="qb-tag">Core All Streams</span>
+                  <span class="qb-size">1.7 MB PDF</span>
+                </div>
+              </div>
+              <div class="qb-card-btns">
+                <button type="button" class="btn btn-primary" onclick="BUDE_APP.loadQuestionBank('englishcore', true)">📖 Read Online</button>
+                <a href="assets/question-bank/EnglishCoreXII.pdf" target="_blank" download="EnglishCoreXII.pdf" class="btn btn-secondary">⬇️ PDF</a>
+              </div>
+            </div>
+
+            <!-- 10. Informatics Practices -->
+            <div class="qb-card" data-subject="informaticspractices" data-stream="tech-lang">
+              <div>
+                <div class="qb-card-top">
+                  <div class="qb-icon">🖥️</div>
+                  <div>
+                    <h3 class="qb-subject-name">Informatics Practices</h3>
+                    <span class="qb-subject-code">CBSE Code 065 · Class XII</span>
+                  </div>
+                </div>
+                <div class="qb-card-meta">
+                  <span class="qb-tag">Tech &amp; Data</span>
+                  <span class="qb-size">624 KB PDF</span>
+                </div>
+              </div>
+              <div class="qb-card-btns">
+                <button type="button" class="btn btn-primary" onclick="BUDE_APP.loadQuestionBank('informaticspractices', true)">📖 Read Online</button>
+                <a href="assets/question-bank/InformaticsPracticesXII.pdf" target="_blank" download="InformaticsPracticesXII.pdf" class="btn btn-secondary">⬇️ PDF</a>
+              </div>
+            </div>
+
+          </div><!-- End .qb-grid -->
+
+          <!-- Interactive Embedded PDF Viewer Pane -->
+          <div class="qb-viewer-card card" id="qb-viewer-card">
+            <div class="qb-viewer-header">
+              <div class="qb-viewer-info">
+                <span class="qb-viewer-badge">Active Document Viewer</span>
+                <h3 id="qb-active-title" class="qb-viewer-title">Physics — Class XII Official CBSE Question Bank</h3>
+                <span id="qb-active-meta" class="qb-viewer-meta">Official PDF · 10.3 MB · CBSE Board Approved</span>
+              </div>
+              <div class="qb-viewer-actions">
+                <a id="qb-download-btn" href="assets/question-bank/PhysicsXII.pdf" download="PhysicsXII.pdf" class="btn btn-secondary btn-sm" title="Download this PDF to your computer">
+                  ⬇️ Download PDF
+                </a>
+                <a id="qb-newtab-btn" href="assets/question-bank/PhysicsXII.pdf" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm" title="Open full screen in a new browser tab">
+                  ↗️ Open in New Tab
+                </a>
+              </div>
+            </div>
+            
+            <div class="qb-iframe-wrapper">
+              <iframe id="qb-pdf-frame" src="assets/question-bank/PhysicsXII.pdf" title="CBSE Question Bank PDF Document"></iframe>
+            </div>
+            
+            <div class="qb-viewer-footer">
+              <span class="text-soft" style="font-size: 0.82rem;">💡 Tip: Use your browser's PDF viewer controls inside the frame above to zoom, rotate, search (Ctrl+F), or jump to any chapter. Click "Read Online" on any card above to switch subjects.</span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+      <section id="feedback-section" class="feedback-section fade-rise">
+        <div class="container">
+          <div class="feedback-box card">
+            <h2 style="font-size: 1.5rem; margin-bottom: 0.5rem; color: var(--color-ink);">Feedback &amp; Suggestions</h2>
+            <p class="text-soft" style="font-size: 0.95rem; margin-bottom: 1.5rem;">
+              Have questions, chapter requests, or thoughts on your BUD-E learning sprint? Share them below and your suggestions will be logged directly into our master review sheet.
+            </p>
+            <form id="form-homepage-feedback" onsubmit="BUDE_APP.handleFeedbackSubmit(event)">
+              <div class="form-group">
+                <label for="fb-student-name" class="form-label">Your Name</label>
+                <input type="text" id="fb-student-name" class="form-control" placeholder="Enter your name" required>
+              </div>
+              <div class="form-group">
+                <label for="fb-comment" class="form-label">Feedback or Suggestion</label>
+                <textarea id="fb-comment" class="form-control" rows="4" placeholder="Tell us how BUD-E helped your revision or suggest an improvement..." required></textarea>
+              </div>
+              <button type="submit" id="btn-submit-feedback" class="btn btn-primary">
+                Submit Feedback
+              </button>
+              <div id="feedback-status-msg" style="margin-top: 1rem; font-size: 0.9rem; display: none;"></div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- End #view-homepage -->
+
+    <!-- ==========================================
+         SIGN-IN MODAL (Sprint 2 Sign-in Gate)
+         ========================================== -->
+    <div id="modal-auth" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-auth-title">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <img src="assets/logo.png?v=2" alt="BUD-E Logo" style="height: 32px; width: 32px; object-fit: contain;">
+            <div>
+              <h2 id="modal-auth-title" style="font-size: 1.25rem; font-weight: 800; color: var(--color-ink);">Sign In to Start Sprint 2</h2>
+              <p class="text-soft" style="font-size: 0.8rem;">Your 2nd sprint is 100% free with all 5 stages included</p>
+            </div>
+          </div>
+          <button type="button" class="btn-close-modal" onclick="BUDE_APP.closeAuthModal()" aria-label="Close dialog">&times;</button>
+        </div>
+
+        <div style="margin-top: 1.5rem;">
+          <div style="background: rgba(240, 244, 255, 0.7); border: 1.5px solid #C7D2FE; border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 1.5rem;">
+            <div style="font-size: 0.85rem; font-weight: 700; color: var(--color-brand-indigo); margin-bottom: 0.2rem;">
+              🎁 Welcome Back to BUD-E!
+            </div>
+            <p style="font-size: 0.8rem; color: var(--color-ink-soft); line-height: 1.45; margin: 0;">
+              You completed Sprint 1! Sign in with your Google account or mobile number to save your progress, track your Proof of Learning certificates, and unlock your second full sprint completely free.
+            </p>
+          </div>
+
+          <!-- Google Sign-in Button -->
+          <button type="button" class="btn-google" onclick="BUDE_APP.signInWithGoogle()">
+            <svg width="20" height="20" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+            Continue with Google
+          </button>
+
+          <div class="auth-divider">OR WITH PHONE</div>
+
+          <!-- Phone Number Form -->
+          <form onsubmit="BUDE_APP.signInWithPhone(event)">
+            <div class="form-group">
+              <label for="auth-phone" class="form-label">WhatsApp / Mobile Number</label>
+              <div style="display: flex; gap: 8px;">
+                <span style="display: flex; align-items: center; padding: 0.75rem 0.85rem; background: var(--color-paper-alt); border: 1px solid var(--color-line); border-radius: var(--radius-button); font-weight: 700; font-size: 0.9rem;">🇮🇳 +91</span>
+                <input type="tel" id="auth-phone" class="form-control" placeholder="Enter 10-digit mobile number" pattern="[0-9]{10}" required maxlength="10">
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.8rem; margin-top: 0.5rem;">
+              Verify &amp; Unlock Free Sprint 2 →
+            </button>
+          </form>
+
+          <div style="text-align: center; margin-top: 1.25rem;">
+            <span class="text-soft" style="font-size: 0.78rem;">By signing in, you agree to receive your verified sprint reports and diagnostic updates.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         PAYWALL A: SOFT LOCK MODAL (End of Sprint 3)
+         ========================================== -->
+    <div id="modal-paywall-soft" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-paywall-soft-title">
+      <div class="modal-card modal-card-wide">
+        <div class="modal-header">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="font-size: 2rem;">🔒</div>
+            <div>
+              <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: var(--color-accent-amber); letter-spacing: 0.05em;">Sprint 3 Completed · Final Stage Lock</span>
+              <h2 id="modal-paywall-soft-title" style="font-size: 1.3rem; font-weight: 800; color: var(--color-ink);">Your Recall Notes &amp; Proof of Learning Card are Locked</h2>
+            </div>
+          </div>
+          <button type="button" class="btn-close-modal" onclick="BUDE_APP.closeSoftPaywallModal()" aria-label="Close dialog">&times;</button>
+        </div>
+
+        <p class="text-soft" style="font-size: 0.95rem; margin-top: 1rem; line-height: 1.6;">
+          You've solved the problems and completed the diagnostic test! This was your last free trial sprint. Unlock your verified Proof of Learning card, high-yield flashcards, and key formula notes right now:
+        </p>
+
+        <!-- 3 Pricing Options -->
+        <div class="paywall-grid">
+          
+          <!-- Option 1: Per Sprint -->
+          <div class="paywall-card">
+            <div>
+              <div class="paywall-plan-title">This Sprint</div>
+              <p class="text-soft" style="font-size: 0.8rem;">Unlock Stage 5 Recall &amp; Proof of Learning for this chapter</p>
+              <div class="paywall-price-wrap">
+                <span class="paywall-currency">₹</span>
+                <span class="paywall-price">49</span>
+                <span class="paywall-period">/ sprint</span>
+              </div>
+              <ul class="paywall-features">
+                <li><span class="paywall-check">✓</span> Instant Proof of Learning card</li>
+                <li><span class="paywall-check">✓</span> High-yield short notes &amp; formulas</li>
+                <li><span class="paywall-check">✓</span> 3D interactive flashcards</li>
+              </ul>
+            </div>
+            <button type="button" class="btn btn-secondary" onclick="BUDE_APP.initiateRazorpayPayment('per-sprint')">
+              Pay ₹49 for this sprint
+            </button>
+          </div>
+
+          <!-- Option 2: Monthly Pack (Featured) -->
+          <div class="paywall-card featured">
+            <span class="paywall-badge">Recommended</span>
+            <div>
+              <div class="paywall-plan-title">Monthly Pack</div>
+              <p class="text-soft" style="font-size: 0.8rem;">Unlimited active learning sprints for 30 days</p>
+              <div class="paywall-price-wrap">
+                <span class="paywall-currency">₹</span>
+                <span class="paywall-price">199</span>
+                <span class="paywall-period">/ month</span>
+              </div>
+              <ul class="paywall-features">
+                <li><span class="paywall-check">✓</span> <strong>Unlimited sprints</strong> for 30 days</li>
+                <li><span class="paywall-check">✓</span> All 10 Class 12 subjects</li>
+                <li><span class="paywall-check">✓</span> All 5 stages + Proof of Learning</li>
+                <li><span class="paywall-check">✓</span> Official CBSE question banks</li>
+              </ul>
+            </div>
+            <button type="button" class="btn btn-primary" onclick="BUDE_APP.initiateRazorpayPayment('monthly')">
+              Get Unlimited — ₹199/mo
+            </button>
+          </div>
+
+          <!-- Option 3: Board Exam Pass -->
+          <div class="paywall-card best-value">
+            <span class="paywall-badge paywall-badge-amber">Best Value</span>
+            <div>
+              <div class="paywall-plan-title">Board Exam Pass</div>
+              <p class="text-soft" style="font-size: 0.8rem;">Unlimited sprints until board exams end (~6 months)</p>
+              <div class="paywall-price-wrap">
+                <span class="paywall-currency">₹</span>
+                <span class="paywall-price">499</span>
+                <span class="paywall-period">/ full season</span>
+              </div>
+              <ul class="paywall-features">
+                <li><span class="paywall-check">✓</span> Complete boards coverage (~6 months)</li>
+                <li><span class="paywall-check">✓</span> Unlimited sprints across all subjects</li>
+                <li><span class="paywall-check">✓</span> All Proof of Learning cards</li>
+                <li><span class="paywall-check">✓</span> Zero recurring charges</li>
+              </ul>
+            </div>
+            <button type="button" class="btn btn-secondary" onclick="BUDE_APP.initiateRazorpayPayment('board-pass')">
+              Board Exam Pass — ₹499
+            </button>
+          </div>
+
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-line); padding-top: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+          <span class="text-soft" style="font-size: 0.82rem;">🔒 100% Secure Checkout with Razorpay · UPI, Cards, NetBanking, GPay, Paytm</span>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="BUDE_APP.closeSoftPaywallModal()">Review Test Score First</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         PAYWALL B: HARD WALL MODAL (Start of Sprint 4+)
+         ========================================== -->
+    <div id="modal-paywall-hard" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-paywall-hard-title">
+      <div class="modal-card modal-card-wide">
+        <div class="modal-header">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="font-size: 2.25rem;">⚡</div>
+            <div>
+              <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: var(--color-brand-indigo); letter-spacing: 0.05em;">Free Sprints Utilized</span>
+              <h2 id="modal-paywall-hard-title" style="font-size: 1.35rem; font-weight: 800; color: var(--color-ink);">Unlock More Sprints for Tomorrow's Exam</h2>
+            </div>
+          </div>
+          <button type="button" class="btn-close-modal" onclick="BUDE_APP.closeHardPaywallModal()" aria-label="Close dialog">&times;</button>
+        </div>
+
+        <p class="text-soft" style="font-size: 0.95rem; margin-top: 1rem; line-height: 1.6;">
+          You've used your 2 free sprints and your trial sprint. Choose a plan to unlock the complete 5-stage active revision flow for any chapter:
+        </p>
+
+        <!-- 3 Pricing Options -->
+        <div class="paywall-grid">
+          
+          <!-- Option 1: Per Sprint -->
+          <div class="paywall-card">
+            <div>
+              <div class="paywall-plan-title">Per Sprint</div>
+              <p class="text-soft" style="font-size: 0.8rem;">Pay as you learn. Perfect for single chapter revision.</p>
+              <div class="paywall-price-wrap">
+                <span class="paywall-currency">₹</span>
+                <span class="paywall-price">49</span>
+                <span class="paywall-period">/ sprint</span>
+              </div>
+              <ul class="paywall-features">
+                <li><span class="paywall-check">✓</span> 1 complete 5-stage sprint</li>
+                <li><span class="paywall-check">✓</span> Diagnostic calibration &amp; practice</li>
+                <li><span class="paywall-check">✓</span> Stage 5 Recall notes &amp; cards</li>
+                <li><span class="paywall-check">✓</span> Verified Proof of Learning</li>
+              </ul>
+            </div>
+            <button type="button" class="btn btn-secondary" onclick="BUDE_APP.initiateRazorpayPayment('per-sprint')">
+              Pay ₹49 for this sprint
+            </button>
+          </div>
+
+          <!-- Option 2: Monthly Pack (Featured) -->
+          <div class="paywall-card featured">
+            <span class="paywall-badge">Most Popular</span>
+            <div>
+              <div class="paywall-plan-title">Monthly Pack</div>
+              <p class="text-soft" style="font-size: 0.8rem;">Unlimited active learning sprints for 30 days.</p>
+              <div class="paywall-price-wrap">
+                <span class="paywall-currency">₹</span>
+                <span class="paywall-price">199</span>
+                <span class="paywall-period">/ month</span>
+              </div>
+              <ul class="paywall-features">
+                <li><span class="paywall-check">✓</span> <strong>Unlimited sprints</strong> for 30 days</li>
+                <li><span class="paywall-check">✓</span> All 10 Class 12 board subjects</li>
+                <li><span class="paywall-check">✓</span> All 5 stages + Proof of Learning</li>
+                <li><span class="paywall-check">✓</span> Priority WhatsApp support</li>
+              </ul>
+            </div>
+            <button type="button" class="btn btn-primary" onclick="BUDE_APP.initiateRazorpayPayment('monthly')">
+              Get Unlimited — ₹199/month
+            </button>
+          </div>
+
+          <!-- Option 3: Board Exam Pass -->
+          <div class="paywall-card best-value">
+            <span class="paywall-badge paywall-badge-amber">Best Value</span>
+            <div>
+              <div class="paywall-plan-title">Board Exam Pass</div>
+              <p class="text-soft" style="font-size: 0.8rem;">Unlimited sprints until board exams end (~6 months).</p>
+              <div class="paywall-price-wrap">
+                <span class="paywall-currency">₹</span>
+                <span class="paywall-price">499</span>
+                <span class="paywall-period">/ full season</span>
+              </div>
+              <ul class="paywall-features">
+                <li><span class="paywall-check">✓</span> Complete boards coverage (~6 months)</li>
+                <li><span class="paywall-check">✓</span> Unlimited sprints across all subjects</li>
+                <li><span class="paywall-check">✓</span> All Proof of Learning cards</li>
+                <li><span class="paywall-check">✓</span> Full official question banks</li>
+              </ul>
+            </div>
+            <button type="button" class="btn btn-secondary" onclick="BUDE_APP.initiateRazorpayPayment('board-pass')">
+              Board Exam Pass — ₹499
+            </button>
+          </div>
+
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-line); padding-top: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+          <span class="text-soft" style="font-size: 0.82rem;">🔒 Powered by Razorpay · Instant activation upon successful payment</span>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="BUDE_APP.closeHardPaywallModal()">Back to Home</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         PRICING & BUSINESS MODEL MODAL
+         ========================================== -->
+    <div id="modal-pricing" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-pricing-title">
+      <div class="modal-card modal-card-wide">
+        <div class="modal-header">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <img src="assets/logo.png?v=2" alt="BUD-E Logo" style="height: 32px; width: 32px; object-fit: contain;">
+            <div>
+              <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: var(--color-brand-indigo); letter-spacing: 0.05em;">Transparent Business Model</span>
+              <h2 id="modal-pricing-title" style="font-size: 1.35rem; font-weight: 800; color: var(--color-ink);">BUD-E Plans &amp; Progression</h2>
+            </div>
+          </div>
+          <button type="button" class="btn-close-modal" onclick="BUDE_APP.closePricingModal()" aria-label="Close dialog">&times;</button>
+        </div>
+
+        <p class="text-soft" style="font-size: 0.92rem; margin-top: 1rem; line-height: 1.6;">
+          <strong>The Free-to-Paid Journey:</strong> Try 2 full sprints free, get a 3rd with the final recall stage locked, then choose ₹49 per sprint or ₹199/month unlimited. No hidden charges.
+        </p>
+
+        <!-- 3 Main Paid Tiers -->
+        <div class="paywall-grid">
+          
+          <div class="paywall-card">
+            <div>
+              <div class="paywall-plan-title">Per Sprint</div>
+              <p class="text-soft" style="font-size: 0.8rem;">Single sprint pass for any subject &amp; chapter</p>
+              <div class="paywall-price-wrap">
+                <span class="paywall-currency">₹</span>
+                <span class="paywall-price">49</span>
+                <span class="paywall-period">/ sprint</span>
+              </div>
+              <ul class="paywall-features">
+                <li><span class="paywall-check">✓</span> 1 complete 5-stage sprint</li>
+                <li><span class="paywall-check">✓</span> All 5 stages including Recall</li>
+                <li><span class="paywall-check">✓</span> Verified Proof of Learning card</li>
+              </ul>
+            </div>
+            <button type="button" class="btn btn-secondary" onclick="BUDE_APP.initiateRazorpayPayment('per-sprint')">
+              Buy 1 Sprint — ₹49
+            </button>
+          </div>
+
+          <div class="paywall-card featured">
+            <span class="paywall-badge">Most Popular</span>
+            <div>
+              <div class="paywall-plan-title">Monthly Pack</div>
+              <p class="text-soft" style="font-size: 0.8rem;">Unlimited active learning for 30 days</p>
+              <div class="paywall-price-wrap">
+                <span class="paywall-currency">₹</span>
+                <span class="paywall-price">199</span>
+                <span class="paywall-period">/ month</span>
+              </div>
+              <ul class="paywall-features">
+                <li><span class="paywall-check">✓</span> Unlimited sprints for 30 days</li>
+                <li><span class="paywall-check">✓</span> All 10 Class 12 board subjects</li>
+                <li><span class="paywall-check">✓</span> All 5 stages &amp; Proof of Learning cards</li>
+              </ul>
+            </div>
+            <button type="button" class="btn btn-primary" onclick="BUDE_APP.initiateRazorpayPayment('monthly')">
+              Get Monthly — ₹199
+            </button>
+          </div>
+
+          <div class="paywall-card best-value">
+            <span class="paywall-badge paywall-badge-amber">Best Value</span>
+            <div>
+              <div class="paywall-plan-title">Board Exam Pass</div>
+              <p class="text-soft" style="font-size: 0.8rem;">Unlimited access until board exams end (~6 months)</p>
+              <div class="paywall-price-wrap">
+                <span class="paywall-currency">₹</span>
+                <span class="paywall-price">499</span>
+                <span class="paywall-period">/ one-time</span>
+              </div>
+              <ul class="paywall-features">
+                <li><span class="paywall-check">✓</span> Full season until board exams end</li>
+                <li><span class="paywall-check">✓</span> Unlimited sprints for all subjects</li>
+                <li><span class="paywall-check">✓</span> Complete peace of mind for Class 12</li>
+              </ul>
+            </div>
+            <button type="button" class="btn btn-secondary" onclick="BUDE_APP.initiateRazorpayPayment('board-pass')">
+              Board Pass — ₹499
+            </button>
+          </div>
+
+        </div>
+
+        <div style="background: rgba(248, 250, 252, 0.7); border: 1px solid var(--color-line); border-radius: 10px; padding: 1rem; margin-top: 0.5rem;">
+          <h4 style="font-size: 0.9rem; font-weight: 800; color: var(--color-ink); margin-bottom: 0.4rem;">Free Tier Breakdown:</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; font-size: 0.82rem; color: var(--color-ink-soft);">
+            <div><strong>Sprint 1:</strong> 100% Free, no signup required</div>
+            <div><strong>Sprint 2:</strong> 100% Free, sign-in required</div>
+            <div><strong>Sprint 3:</strong> Free Trial (Stages 1-4 free, Recall locked)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         PAYMENT SIMULATION MODAL (Fallback for Local / Test Review)
+         ========================================== -->
+    <div id="modal-payment-sim" class="modal-overlay" role="dialog" aria-modal="true">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="font-size: 1.75rem;">💳</div>
+            <div>
+              <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--color-ink);">Razorpay Payment Gateway</h2>
+              <p class="text-soft" style="font-size: 0.8rem;">Interactive test checkout window</p>
+            </div>
+          </div>
+          <button type="button" class="btn-close-modal" onclick="BUDE_APP.closePaymentSimModal()">&times;</button>
+        </div>
+
+        <div style="margin-top: 1.25rem;">
+          <div style="background: var(--color-paper-alt); padding: 1rem; border-radius: 10px; border: 1px solid var(--color-line); margin-bottom: 1.25rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <span class="text-soft" style="font-size: 0.85rem;">Selected Plan:</span>
+              <strong id="sim-plan-title" style="color: var(--color-brand-indigo);">Monthly Pack</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+              <span class="text-soft" style="font-size: 0.85rem;">Total Payable:</span>
+              <span id="sim-plan-amount" style="font-size: 1.75rem; font-weight: 800; color: var(--color-ink);">₹199</span>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 1.25rem;">
+            <span class="form-label" style="margin-bottom: 0.5rem;">Simulate Payment Method:</span>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="BUDE_APP.confirmSimulatedPayment('UPI')">📱 UPI / GPay</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="BUDE_APP.confirmSimulatedPayment('Card')">💳 Card</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="BUDE_APP.confirmSimulatedPayment('NetBanking')">🏦 NetBanking</button>
+            </div>
+          </div>
+
+          <button type="button" class="btn btn-primary" style="width: 100%; padding: 0.85rem;" onclick="BUDE_APP.confirmSimulatedPayment('Instant')">
+            ✓ Complete Test Payment
+          </button>
+          
+          <p class="text-soft text-center" style="font-size: 0.75rem; margin-top: 0.85rem;">
+            🔒 In production with live API keys, this seamlessly launches the official Razorpay Checkout pop-up.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         ADMIN SPRINT RECORDS VIEWER (LOCAL ACCESS)
+         ========================================== -->
+    <div id="modal-admin-records" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-admin-title">
+      <div class="modal-card modal-card-wide" style="max-width: 800px;">
+        <div class="modal-header">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="font-size: 1.75rem;">📋</div>
+            <div>
+              <h2 id="modal-admin-title" style="font-size: 1.25rem; font-weight: 800; color: var(--color-ink);">Sprint Activity Records</h2>
+              <span id="admin-records-count" class="pill pill-brand" style="font-size: 0.72rem; margin-top: 0.25rem;">0 Records Stored</span>
+            </div>
+          </div>
+          <button type="button" class="btn-close-modal" onclick="BUDE_APP.closeAdminRecords()" aria-label="Close dialog">&times;</button>
+        </div>
+
+        <div id="admin-records-table-wrap" style="margin-top: 1.25rem; max-height: 400px; overflow-y: auto;">
+          <!-- Injected via JS -->
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.25rem; border-top: 1px solid var(--color-line); padding-top: 1rem;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="BUDE_APP.clearAdminRecords()" style="color: var(--color-danger); border-color: #FECACA;">🗑️ Clear Records</button>
+          <button type="button" class="btn btn-primary btn-sm" onclick="BUDE_APP.closeAdminRecords()">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         PHASE 4 ONBOARDING MODAL
+         ========================================== -->
+    <div id="modal-onboarding" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <img src="assets/logo.png?v=2" alt="BUD-E Logo" style="height: 32px; width: 32px; object-fit: contain;">
+            <div>
+              <h2 id="modal-title" style="font-size: 1.25rem; font-weight: 800; color: var(--color-ink);">Start Your Learning Sprint</h2>
+              <p class="text-soft" style="font-size: 0.8rem;">Configure your 5-stage personalized revision session</p>
+            </div>
+          </div>
+          <button type="button" class="btn-close-modal" onclick="BUDE_APP.closeOnboarding()" aria-label="Close dialog">&times;</button>
+        </div>
+
+        <form id="form-onboarding" onsubmit="BUDE_APP.handleOnboardingSubmit(event)" style="margin-top: 1.25rem;">
+          <!-- 1. Student Name -->
+          <div class="form-group">
+            <label for="student-name" class="form-label">Full Name <span style="color: var(--color-danger);">*</span></label>
+            <input type="text" id="student-name" class="form-control" placeholder="e.g. Arnav Kumar" required autocomplete="name">
+          </div>
+
+          <!-- 2. Subject Dropdown -->
+          <div class="form-group">
+            <label for="select-subject" class="form-label">Subject <span style="color: var(--color-danger);">*</span></label>
+            <select id="select-subject" class="form-select" onchange="BUDE_APP.handleSubjectChange()" required>
+              <option value="" disabled selected>Select Class 12 Subject</option>
+              <option value="Physics">Physics</option>
+              <option value="Chemistry">Chemistry</option>
+              <option value="Maths">Maths</option>
+              <option value="Biology">Biology</option>
+              <option value="Economics">Economics</option>
+              <option value="Accounts">Accounts</option>
+              <option value="Business studies">Business studies</option>
+              <option value="English (literature)">English (literature)</option>
+              <option value="IP">IP</option>
+              <option value="CS">CS</option>
+            </select>
+          </div>
+
+          <!-- 3. Dependent Chapter Dropdown -->
+          <div class="form-group">
+            <label for="select-chapter" class="form-label">Chapter <span style="color: var(--color-danger);">*</span></label>
+            <select id="select-chapter" class="form-select" required disabled>
+              <option value="" disabled selected>First select a subject above</option>
+            </select>
+          </div>
+
+          <!-- 4. Time Budget Selection Pills -->
+          <div class="form-group">
+            <label class="form-label">Time Budget Available <span style="color: var(--color-danger);">*</span></label>
+            <div class="time-pills-group" id="time-pills-container">
+              <button type="button" class="time-pill active" data-time="2hrs" onclick="BUDE_APP.selectTimeBudget('2hrs')">2 Hours</button>
+              <button type="button" class="time-pill" data-time="3hrs" onclick="BUDE_APP.selectTimeBudget('3hrs')">3 Hours</button>
+              <button type="button" class="time-pill" data-time="4hrs" onclick="BUDE_APP.selectTimeBudget('4hrs')">4 Hours</button>
+              <button type="button" class="time-pill" data-time="5+hrs" onclick="BUDE_APP.selectTimeBudget('5+hrs')">5+ Hours</button>
+            </div>
+            <input type="hidden" id="selected-time-budget" value="2hrs">
+          </div>
+
+          <!-- 5. Parent WhatsApp Phone Number -->
+          <div class="form-group">
+            <label for="parent-phone" class="form-label">Parent WhatsApp Number <span style="color: var(--color-danger);">*</span></label>
+            <p class="text-soft" style="font-size: 0.75rem; margin-bottom: 0.4rem;">
+              Required for the break accountability safety system. Keeps you focused.
+            </p>
+            <input type="tel" id="parent-phone" class="form-control" placeholder="+91 9876543210" required pattern="^\+?[0-9\s\-]{10,15}$" autocomplete="tel">
+          </div>
+
+          <div class="modal-footer" style="margin-top: 1.5rem; display: flex; gap: 0.75rem; justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary" onclick="BUDE_APP.closeOnboarding()">Cancel</button>
+            <button type="submit" id="btn-submit-onboarding" class="btn btn-primary" style="padding: 0.75rem 1.5rem;">
+              Proceed to Stage 1: Calibrate →
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         PHASE 11 BREAK SYSTEM MODALS & OVERLAYS
+         ========================================== -->
+    <!-- 45-Min Break Prompt Modal -->
+    <div id="modal-break-prompt" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="break-modal-title">
+      <div class="modal-card" style="text-align: center; border-top: 4px solid var(--color-accent-amber);">
+        <div style="font-size: 3rem; margin-bottom: 0.75rem;">☕</div>
+        <h3 id="break-modal-title" style="font-size: 1.4rem; font-weight: 800; color: var(--color-ink); margin-bottom: 0.5rem;">Take a 10-minute break?</h3>
+        <p class="text-soft" style="font-size: 0.95rem; line-height: 1.5; margin-bottom: 1.75rem;">
+          You've completed 45 minutes of intense active problem-solving! A brief rest consolidates working memory and prevents cognitive fatigue.
+        </p>
+        <div style="display: flex; gap: 1rem; justify-content: center;">
+          <button type="button" class="btn btn-secondary" onclick="BUDE_APP.declineBreak()" style="padding: 0.75rem 1.5rem;">
+            No, keep studying
+          </button>
+          <button type="button" class="btn btn-primary" onclick="BUDE_APP.acceptBreak()" style="padding: 0.75rem 1.75rem;">
+            Yes, take break (10 min)
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Break Full-Screen Countdown Overlay -->
+    <div id="overlay-break-active" class="modal-overlay" style="background-color: rgba(15, 20, 48, 0.85); backdrop-filter: blur(4px);">
+      <div class="modal-card" style="text-align: center; max-width: 540px; border-top: 4px solid var(--color-brand-indigo);">
+        <div style="display: inline-flex; align-items: center; gap: 8px; background-color: var(--color-stage-calibrate); color: var(--color-brand-indigo); padding: 0.4rem 1rem; border-radius: var(--radius-pill); font-size: 0.8rem; font-weight: 700; margin-bottom: 1rem;">
+          ⏸️ SPRINT PAUSED · RECOVERY BREAK
+        </div>
+        <h2 style="font-size: 1.6rem; font-weight: 800; color: var(--color-ink); margin-bottom: 0.5rem;">Rest Your Mind</h2>
+        <p class="text-soft" style="font-size: 0.9rem; margin-bottom: 1.5rem;">
+          Step away from the screen, stretch, drink water. We will keep track of your time.
+        </p>
+
+        <!-- Big 15-Minute Countdown Display -->
+        <div style="background-color: var(--color-paper-alt); border-radius: var(--radius-card); padding: 1.75rem; margin-bottom: 1.5rem; border: 1px solid var(--color-line);">
+          <span class="text-soft" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">BREAK TIME REMAINING</span>
+          <div id="break-timer-display" style="font-family: var(--font-mono); font-size: 3rem; font-weight: 800; color: var(--color-brand-indigo); margin: 0.25rem 0;">15:00</div>
+          <div id="break-countdown-progress" style="font-size: 0.85rem; color: var(--color-ink-soft);">Target return in 10 minutes</div>
+        </div>
+
+        <!-- Warning Callout Container (Activates at 10 min and 15 min) -->
+        <div id="break-warning-banner" style="display: none; background-color: #FEF3C7; border: 1px solid #FCD34D; border-radius: 6px; padding: 0.85rem; margin-bottom: 1.5rem; font-size: 0.85rem; color: #92400E; text-align: left;">
+          <!-- Dynamically populated -->
+        </div>
+
+        <button type="button" class="btn btn-primary btn-large" onclick="BUDE_APP.resumeFromBreak()" style="width: 100%; font-size: 1.05rem; padding: 0.9rem;">
+          To resume, click here
+        </button>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         SPRINT CONTAINER (STAGES 1 TO 5)
+         ========================================== -->
+    <div id="view-sprint-container" class="view-section" style="display: none; padding: 2.5rem 0 4rem 0;">
+      <div class="container" style="max-width: 900px;">
+        
+        <!-- Sprint Stage Tracker Bar -->
+        <div class="sprint-stepper-wrap" style="margin-bottom: 2.5rem;">
+          <div class="sprint-header-meta">
+            <div>
+              <span class="pill pill-brand" id="sprint-subject-pill">Subject</span>
+              <h2 id="sprint-chapter-title" style="font-size: 1.4rem; font-weight: 800; margin-top: 0.4rem; color: var(--color-ink);">Chapter Title</h2>
+            </div>
+            <div style="text-align: right;">
+              <span class="text-soft" style="font-size: 0.8rem; font-weight: 600;">ACTIVE SPRINT TIME</span>
+              <div id="sprint-clock" style="font-family: var(--font-mono); font-size: 1.15rem; font-weight: 700; color: var(--color-brand-indigo);">00:00</div>
+            </div>
+          </div>
+
+          <div class="stepper-stages-bar">
+            <div class="step-node active" id="step-node-1"><span class="step-num">1</span> <span class="step-text">Calibrate</span></div>
+            <div class="step-node" id="step-node-2"><span class="step-num">2</span> <span class="step-text">Learn</span></div>
+            <div class="step-node" id="step-node-3"><span class="step-num">3</span> <span class="step-text">Practice</span></div>
+            <div class="step-node" id="step-node-4"><span class="step-num">4</span> <span class="step-text">Test</span></div>
+            <div class="step-node" id="step-node-5"><span class="step-num">5</span> <span class="step-text">Recall</span></div>
+          </div>
+        </div>
+
+        <!-- STAGE 1: CALIBRATE VIEW -->
+        <div id="stage-calibrate-wrapper" class="card stage-card">
+          <div class="stage-header" style="border-bottom: 1px solid var(--color-line); padding-bottom: 1.25rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 700; color: var(--color-brand-indigo); text-transform: uppercase;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--color-brand-indigo);"></span>
+                Stage 1 · Diagnostic Calibration
+              </div>
+              <h3 style="font-size: 1.25rem; font-weight: 800; margin-top: 0.25rem; color: var(--color-ink);">Pinpoint Your Knowledge Band</h3>
+            </div>
+            <div class="q-progress-indicator" id="calib-progress-text" style="font-weight: 700; color: var(--color-ink-soft); font-size: 0.95rem;">
+              Question 1 of 10
+            </div>
+          </div>
+
+          <!-- Question Content Block -->
+          <div id="calib-question-container">
+            <div id="calib-question-text" class="question-text" style="font-size: 1.15rem; font-weight: 600; line-height: 1.5; margin-bottom: 1.5rem; color: var(--color-ink);">
+              <!-- Rendered via JS -->
+            </div>
+
+            <!-- Options List -->
+            <div id="calib-options-list" class="options-grid">
+              <!-- Rendered via JS -->
+            </div>
+
+            <div class="question-nav-actions" style="margin-top: 2rem; display: flex; justify-content: space-between; align-items: center;">
+              <span class="text-soft" style="font-size: 0.85rem;">Select one option to advance.</span>
+              <button id="btn-calib-next" class="btn btn-primary" onclick="BUDE_APP.handleCalibNext()" disabled>
+                Next Question →
+              </button>
+            </div>
+          </div>
+
+          <!-- Calibration Result Screen (Rendered upon completing 10 Qs) -->
+          <div id="calib-result-container" style="display: none; text-align: center; padding: 2rem 1rem;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">🎯</div>
+            <h3 style="font-size: 1.75rem; font-weight: 800; color: var(--color-ink); margin-bottom: 0.5rem;">Diagnostic Complete!</h3>
+            <p class="text-soft" style="max-width: 500px; margin: 0 auto 1.5rem auto;">
+              Your initial knowledge band has been determined based on your active problem-solving score.
+            </p>
+
+            <div style="background-color: var(--color-paper-alt); border-radius: var(--radius-card); padding: 1.5rem; max-width: 420px; margin: 0 auto 2rem auto; border: 1px solid var(--color-line);">
+              <div class="text-soft" style="font-size: 0.8rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">YOUR SCORE</div>
+              <div id="calib-result-score" style="font-size: 2.25rem; font-weight: 800; color: var(--color-ink); margin: 0.25rem 0 1rem 0;">0 / 10</div>
+              
+              <div class="text-soft" style="font-size: 0.8rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.5rem;">ASSIGNED LEVEL</div>
+              <div id="calib-level-badge" class="level-badge" style="display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 1.25rem; border-radius: var(--radius-pill); font-weight: 800; font-size: 1.1rem;">
+                <!-- Populated via JS -->
+              </div>
+              <p id="calib-level-explanation" class="text-soft" style="font-size: 0.85rem; margin-top: 1rem; line-height: 1.5;">
+                <!-- Populated via JS -->
+              </p>
+            </div>
+
+            <button class="btn btn-primary btn-large" onclick="BUDE_APP.proceedToStage2()">
+              Proceed to Stage 2: Learn →
+            </button>
+          </div>
+
+        </div><!-- End #stage-calibrate-wrapper -->
+
+        <!-- STAGE 2: LEARN VIEW -->
+        <div id="stage-learn-wrapper" class="card stage-card" style="display: none;">
+          <div class="stage-header" style="border-bottom: 1px solid var(--color-line); padding-bottom: 1.25rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <div style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 700; color: #B45309; text-transform: uppercase;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--color-accent-amber);"></span>
+                Stage 2 · Targeted Concept Learning
+              </div>
+              <h3 id="learn-heading" style="font-size: 1.25rem; font-weight: 800; margin-top: 0.25rem; color: var(--color-ink);">Targeted Video Lecture</h3>
+            </div>
+            <div id="learn-level-tag">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Video Player Container -->
+          <div class="learn-player-container">
+            <div id="video-frame-wrapper" class="video-responsive-wrap">
+              <!-- Embedded responsive iframe or unavailable notice -->
+            </div>
+          </div>
+
+          <div class="learn-action-footer" style="margin-top: 1.75rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <p class="text-soft" style="font-size: 0.9rem; max-width: 500px;">
+              Already reviewed the lecture? Jump straight to question practice to test your problem-solving.
+            </p>
+            <div style="display: flex; gap: 0.75rem;">
+              <button id="btn-skip-lecture" class="btn btn-secondary" onclick="BUDE_APP.proceedToStage3()">
+                Skip lecture for now and proceed to question practice →
+              </button>
+            </div>
+          </div>
+        </div><!-- End #stage-learn-wrapper -->
+
+        <!-- STAGE 3: PRACTICE VIEW -->
+        <div id="stage-practice-wrapper" class="card stage-card" style="display: none;">
+          <div class="stage-header" style="border-bottom: 1px solid var(--color-line); padding-bottom: 1.25rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <div style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 700; color: var(--color-success); text-transform: uppercase;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--color-success);"></span>
+                Stage 3 · Active Question Practice
+              </div>
+              <h3 id="prac-heading" style="font-size: 1.25rem; font-weight: 800; margin-top: 0.25rem; color: var(--color-ink);">Targeted Practice Bank</h3>
+            </div>
+            
+            <!-- Real-time Confidence Meter Bar -->
+            <div class="confidence-tracker-widget" style="display: flex; align-items: center; gap: 12px; background-color: var(--color-paper-alt); padding: 0.4rem 0.85rem; border-radius: var(--radius-pill); border: 1px solid var(--color-line);">
+              <span style="font-size: 0.75rem; font-weight: 700; color: var(--color-ink-soft); text-transform: uppercase;">Confidence Meter</span>
+              <div class="confidence-bar-outer" style="width: 90px; height: 8px; background-color: #D8DEEE; border-radius: 999px; overflow: hidden;">
+                <div id="confidence-bar-fill" style="width: 50%; height: 100%; background-color: var(--color-accent-amber); transition: width 400ms ease-out;"></div>
+              </div>
+              <span id="confidence-pct-val" style="font-family: var(--font-mono); font-size: 0.85rem; font-weight: 800; color: var(--color-ink);">50%</span>
+            </div>
+          </div>
+
+          <!-- Question Meta Header -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <span id="prac-progress-text" class="text-soft" style="font-size: 0.9rem; font-weight: 700;">Question 1 of 20</span>
+            <div style="display: flex; gap: 0.5rem;" id="prac-error-chips">
+              <span class="pill" style="font-size: 0.7rem; background-color: #FEF3C7; color: #92400E;" id="chip-silly">Silly: 0</span>
+              <span class="pill" style="font-size: 0.7rem; background-color: #FEE2E2; color: #991B1B;" id="chip-concept">Concept: 0</span>
+              <span class="pill" style="font-size: 0.7rem; background-color: #E0E7FF; color: #3730D9;" id="chip-guess">Guess: 0</span>
+            </div>
+          </div>
+
+          <!-- Question Content Block -->
+          <div id="prac-question-container">
+            <div id="prac-question-text" class="question-text" style="font-size: 1.15rem; font-weight: 600; line-height: 1.5; margin-bottom: 1.5rem; color: var(--color-ink);">
+              <!-- Rendered via JS -->
+            </div>
+
+            <!-- Hint Trigger and Display -->
+            <div style="margin-bottom: 1.25rem;">
+              <button type="button" id="btn-view-hint" class="btn btn-secondary" onclick="BUDE_APP.togglePracticeHint()" style="font-size: 0.85rem; padding: 0.4rem 0.85rem;">
+                💡 View Hint
+              </button>
+              <div id="prac-hint-box" class="hint-box" style="display: none; margin-top: 0.75rem; background-color: var(--color-stage-learn); border: 1px solid #FCD34D; border-radius: var(--radius-button); padding: 0.85rem 1rem; font-size: 0.9rem; color: #78350F;">
+                <!-- Rendered via JS -->
+              </div>
+            </div>
+
+            <!-- MCQ Options List -->
+            <div id="prac-options-list" class="options-grid">
+              <!-- Rendered via JS -->
+            </div>
+
+            <!-- Post-Attempt Error Diagnostic Prompt: Was this a silly mistake, a concept gap, or a guess? -->
+            <div id="prac-error-tagger" class="error-tagger-box" style="display: none; margin-top: 1.5rem; background-color: #FFF7ED; border: 1px solid #FFEDD5; border-radius: var(--radius-card); padding: 1.25rem;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 0.5rem;">
+                <span style="font-size: 1.2rem;">⚠️</span>
+                <strong style="color: var(--color-warning); font-size: 0.95rem;">Incorrect Answer — Self-Diagnostic</strong>
+              </div>
+              <p style="font-size: 0.9rem; color: var(--color-ink); margin-bottom: 1rem;">
+                Was this a silly mistake, a concept gap, or a guess?
+              </p>
+              <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                <button type="button" class="btn btn-secondary" onclick="BUDE_APP.tagErrorType('silly')" style="background-color: #FEF3C7; border-color: #FDE68A; color: #92400E;">
+                  Silly Mistake (-3% Conf.)
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="BUDE_APP.tagErrorType('concept')" style="background-color: #FEE2E2; border-color: #FECACA; color: #991B1B;">
+                  Concept Gap (-7% Conf.)
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="BUDE_APP.tagErrorType('guess')" style="background-color: #E0E7FF; border-color: #C7D2FE; color: #3730D9;">
+                  Guess (-12% Conf.)
+                </button>
+              </div>
+            </div>
+
+            <!-- Solution Trigger (Only after attempt) -->
+            <div id="prac-solution-area" style="display: none; margin-top: 1.5rem;">
+              <button type="button" id="btn-view-solution" class="btn btn-secondary" onclick="BUDE_APP.togglePracticeSolution()" style="font-size: 0.85rem; padding: 0.4rem 0.85rem; margin-bottom: 0.75rem;">
+                📘 View Solution
+              </button>
+              <div id="prac-solution-box" class="solution-box" style="display: none; background-color: var(--color-stage-practice); border: 1px solid #86EFAC; border-radius: var(--radius-button); padding: 1rem; font-size: 0.95rem; color: #14532D; line-height: 1.6;">
+                <!-- Rendered via JS -->
+              </div>
+            </div>
+
+            <!-- Question Navigation Action -->
+            <div class="question-nav-actions" style="margin-top: 2rem; display: flex; justify-content: flex-end; align-items: center;">
+              <button id="btn-prac-next" class="btn btn-primary" onclick="BUDE_APP.handlePracticeNext()" disabled>
+                Next Question →
+              </button>
+            </div>
+          </div>
+
+          <!-- Practice Stage Completion Summary -->
+          <div id="prac-completion-container" style="display: none; text-align: center; padding: 2.5rem 1rem;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">💪</div>
+            <h3 style="font-size: 1.75rem; font-weight: 800; color: var(--color-ink); margin-bottom: 0.5rem;">Practice Round Completed!</h3>
+            <p class="text-soft" style="max-width: 540px; margin: 0 auto 1.5rem auto;">
+              You have worked through your active problem set. Your diagnostic error profile and confidence meter have been calibrated.
+            </p>
+
+            <div style="background-color: var(--color-paper-alt); border-radius: var(--radius-card); padding: 1.5rem; max-width: 480px; margin: 0 auto 2rem auto; border: 1px solid var(--color-line); text-align: left;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 1rem; border-bottom: 1px solid var(--color-line); padding-bottom: 0.75rem;">
+                <span class="text-soft" style="font-size: 0.85rem; font-weight: 700;">FINAL CONFIDENCE METER</span>
+                <span id="summary-final-conf" style="font-family: var(--font-mono); font-weight: 800; color: var(--color-brand-indigo); font-size: 1.1rem;">50%</span>
+              </div>
+              <div style="font-size: 0.85rem; font-weight: 700; color: var(--color-ink-soft); margin-bottom: 0.5rem;">ERROR TAXONOMY TRACKED</div>
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <span class="pill error-silly" id="summary-silly">Silly Mistakes: 0</span>
+                <span class="pill error-concept" id="summary-concept">Concept Gaps: 0</span>
+                <span class="pill error-guess" id="summary-guess">Guesses: 0</span>
+              </div>
+            </div>
+
+            <button class="btn btn-primary btn-large" onclick="BUDE_APP.proceedToStage4()">
+              Proceed to Stage 4: Test (Exam Simulation) →
+            </button>
+          </div>
+        </div><!-- End #stage-practice-wrapper -->
+
+        <!-- STAGE 4: TEST VIEW (EXAM SIMULATION) -->
+        <div id="stage-test-wrapper" class="card stage-card" style="display: none;">
+          <div class="stage-header" style="border-bottom: 1px solid var(--color-line); padding-bottom: 1.25rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <div style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 700; color: #4338CA; text-transform: uppercase;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #4338CA;"></span>
+                Stage 4 · Timed Exam Simulation
+              </div>
+              <h3 id="test-heading" style="font-size: 1.25rem; font-weight: 800; margin-top: 0.25rem; color: var(--color-ink);">Mastery Test (Zero Hints)</h3>
+            </div>
+            
+            <!-- Exam Countdown Clock -->
+            <div class="test-timer-widget" style="display: flex; align-items: center; gap: 8px; background-color: #FEE2E2; border: 1px solid #FECACA; padding: 0.45rem 1rem; border-radius: var(--radius-pill);">
+              <span style="font-size: 1.1rem;">⏱️</span>
+              <span style="font-size: 0.8rem; font-weight: 700; color: var(--color-danger); text-transform: uppercase;">Time Left:</span>
+              <span id="test-countdown-timer" style="font-family: var(--font-mono); font-size: 1.1rem; font-weight: 800; color: var(--color-danger);">15:00</span>
+            </div>
+          </div>
+
+          <!-- Test Mode Banner -->
+          <div style="background-color: var(--color-paper-alt); border-radius: 6px; padding: 0.75rem 1.25rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--color-brand-indigo);">
+            <span class="text-soft" style="font-size: 0.85rem;">
+              <strong>Exam Rules:</strong> 10 standard moderate-to-difficult board MCQs. No hints allowed. Unanswered questions auto-submit on timeout.
+            </span>
+            <span id="test-progress-text" style="font-weight: 800; color: var(--color-ink); font-size: 0.9rem;">Q 1 of 10</span>
+          </div>
+
+          <!-- Test Question Container -->
+          <div id="test-question-container">
+            <div id="test-question-text" class="question-text" style="font-size: 1.15rem; font-weight: 600; line-height: 1.5; margin-bottom: 1.5rem; color: var(--color-ink);">
+              <!-- Rendered via JS -->
+            </div>
+
+            <!-- MCQ Options List -->
+            <div id="test-options-list" class="options-grid">
+              <!-- Rendered via JS -->
+            </div>
+
+            <div class="question-nav-actions" style="margin-top: 2rem; display: flex; justify-content: space-between; align-items: center;">
+              <span class="text-soft" style="font-size: 0.85rem;">Choice locked once selected.</span>
+              <button id="btn-test-next" class="btn btn-primary" onclick="BUDE_APP.handleTestNext()" disabled>
+                Next Question →
+              </button>
+            </div>
+          </div>
+
+          <!-- Test Review Screen (Rendered upon completing 10 questions or timeout) -->
+          <div id="test-review-container" style="display: none; padding: 1.5rem 0;">
+            <div style="text-align: center; margin-bottom: 2rem;">
+              <div style="font-size: 3rem; margin-bottom: 0.5rem;">📋</div>
+              <h3 style="font-size: 1.75rem; font-weight: 800; color: var(--color-ink); margin-bottom: 0.25rem;">Exam Simulation Complete</h3>
+              <p class="text-soft" style="font-size: 0.95rem;">Review your answers and verified solutions below before generating your Proof of Learning.</p>
+              
+              <div style="margin-top: 1.5rem; display: inline-flex; align-items: center; gap: 1.5rem; background-color: var(--color-paper-alt); padding: 1rem 2rem; border-radius: var(--radius-card); border: 1px solid var(--color-line);">
+                <div>
+                  <span class="text-soft" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">FINAL SCORE</span>
+                  <div id="test-review-score" style="font-size: 2rem; font-weight: 800; color: var(--color-ink);">0 / 10</div>
+                </div>
+                <div style="height: 40px; width: 1px; background-color: var(--color-line);"></div>
+                <div>
+                  <span class="text-soft" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">STATUS</span>
+                  <div id="test-pass-status" style="font-size: 1.25rem; font-weight: 800; color: var(--color-success);">CAN SOLVE</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- List of Questions with Solutions -->
+            <div id="test-review-items-list" style="display: flex; flex-direction: column; gap: 1.25rem; margin-bottom: 2rem;">
+              <!-- Rendered via JS -->
+            </div>
+
+            <div style="text-align: center;">
+              <button class="btn btn-primary btn-large" onclick="BUDE_APP.proceedToStage5Result()">
+                Generate Proof of Learning Card →
+              </button>
+            </div>
+          </div>
+
+        </div><!-- End #stage-test-wrapper -->
+
+        <!-- STAGE 4 RESULT & PROOF OF LEARNING VIEW -->
+        <div id="stage-result-wrapper" class="card stage-card" style="display: none;">
+          <div class="stage-header" style="border-bottom: 1px solid var(--color-line); padding-bottom: 1.25rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <div style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 700; color: var(--color-brand-indigo); text-transform: uppercase;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--color-brand-indigo);"></span>
+                Sprint Analytics &amp; Verification
+              </div>
+              <h3 style="font-size: 1.35rem; font-weight: 800; margin-top: 0.25rem; color: var(--color-ink);">Your Sprint Proof of Learning</h3>
+            </div>
+            <div style="display: flex; gap: 0.75rem;">
+              <button class="btn btn-secondary" onclick="BUDE_APP.copyProofCardSummary()">📋 Copy Summary</button>
+              <button id="btn-proceed-recall-top" class="btn btn-primary" onclick="BUDE_APP.proceedToRecall()">Proceed to Stage 5: Recall (Flashcards) →</button>
+            </div>
+          </div>
+
+          <!-- Proof of Learning Card (Screenshot-Ready) -->
+          <div class="pol-card-container" style="max-width: 620px; margin: 0 auto 3rem auto;">
+            <div class="pol-card-locked-container">
+              <div id="pol-locked-overlay" class="pol-locked-overlay" style="display: none;">
+                <div class="pol-lock-icon">🔒</div>
+                <h3 class="pol-lock-title">Proof of Learning Locked</h3>
+                <p class="pol-lock-desc">
+                  Your verified Proof of Learning card and Stage 5 Recall notes are ready. Unlock them with the Monthly Pack or by purchasing this sprint.
+                </p>
+                <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center;">
+                  <button type="button" class="btn btn-secondary" onclick="BUDE_APP.initiateRazorpayPayment('per-sprint')">Pay ₹49 for this sprint</button>
+                  <button type="button" class="btn btn-primary" onclick="BUDE_APP.initiateRazorpayPayment('monthly')">Get Unlimited — ₹199/month</button>
+                </div>
+              </div>
+
+              <div id="student-pol-card" class="pol-card" style="box-shadow: 0 4px 20px rgba(15, 20, 48, 0.08); border: 2px solid var(--color-brand-indigo);">
+                <div class="pol-header">
+                  <div class="pol-brand-wrap">
+                    <img src="assets/logo.png?v=2" alt="BUD-E Logo" class="pol-logo">
+                    <div>
+                      <div class="pol-app-title">BUD-E PROOF OF LEARNING</div>
+                      <div class="pol-date" id="pol-card-date">OCTOBER 7, 2026</div>
+                    </div>
+                  </div>
+                  <div id="pol-badge-container">
+                    <!-- Populated via JS: CAN SOLVE badge if score >= 7 -->
+                  </div>
+                </div>
+
+                <div class="pol-body">
+                  <div class="pol-student">
+                    <span class="pol-label">STUDENT</span>
+                    <div class="pol-name" id="pol-student-name">Student Name</div>
+                  </div>
+                  
+                  <div class="pol-topic">
+                    <span class="pol-label">TOPIC &amp; SPRINT TIME</span>
+                    <div class="pol-topic-title" id="pol-topic-title">Physics: Electric Charges and Fields</div>
+                    <div class="pol-duration-text" id="pol-time-spent">Time Invested: 2 Hours</div>
+                  </div>
+
+                  <div class="pol-metrics-grid">
+                    <div class="metric-box">
+                      <span class="metric-label">TEST SCORE</span>
+                      <div class="metric-value" id="pol-test-score"><span class="score-high">8</span> / 10</div>
+                    </div>
+                    <div class="metric-box">
+                      <span class="metric-label">CONFIDENCE METER</span>
+                      <div class="metric-value" id="pol-confidence-score">88%</div>
+                    </div>
+                    <div class="metric-box">
+                      <span class="metric-label">DIAGNOSTIC BAND</span>
+                      <div class="metric-value" id="pol-diagnostic-band" style="color: var(--color-brand-indigo);">Intermediate</div>
+                    </div>
+                  </div>
+
+                  <div class="pol-error-summary" style="margin-top: 1rem;">
+                    <div class="error-pill error-silly" id="pol-err-silly">Silly Mistakes: 0</div>
+                    <div class="error-pill error-concept" id="pol-err-concept">Concept Gaps: 0</div>
+                    <div class="error-pill error-guess" id="pol-err-guess">Guesses: 0</div>
+                  </div>
+                </div>
+
+                <div class="pol-footer">
+                  <span class="pol-footer-brand">BUD-E · Build · Understand · Drill · Evaluate</span>
+                  <span class="pol-footer-badge">Class 12 Boards Sprint Verified</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Deep Diagnostic Error & Confidence Analysis Section -->
+          <div class="analytics-deep-dive" style="border-top: 1px solid var(--color-line); padding-top: 2rem;">
+            <h4 style="font-size: 1.15rem; font-weight: 800; color: var(--color-ink); margin-bottom: 1.25rem;">Diagnostic Performance Breakdown</h4>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
+              <!-- Confidence Meter Visualization -->
+              <div class="card" style="background-color: var(--color-paper-alt); padding: 1.25rem;">
+                <span class="text-soft" style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">Final Confidence Level</span>
+                <div style="display: flex; align-items: baseline; gap: 8px; margin: 0.5rem 0 1rem 0;">
+                  <span id="deep-conf-value" style="font-size: 2.25rem; font-weight: 800; color: var(--color-brand-indigo);">85%</span>
+                  <span class="text-soft" style="font-size: 0.85rem;">from 50% baseline</span>
+                </div>
+                <div style="width: 100%; height: 10px; background-color: var(--color-line); border-radius: 999px; overflow: hidden;">
+                  <div id="deep-conf-bar" style="width: 85%; height: 100%; background-color: var(--color-accent-amber); transition: width 400ms ease-out;"></div>
+                </div>
+              </div>
+
+              <!-- Error Analysis Card -->
+              <div class="card" style="background-color: var(--color-paper-alt); padding: 1.25rem;">
+                <span class="text-soft" style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">Cognitive Error Breakdown</span>
+                <div style="margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.6rem;">
+                  <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+                    <span>Silly Mistakes:</span>
+                    <strong id="deep-silly-count">0</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+                    <span>Concept Gaps:</span>
+                    <strong id="deep-concept-count">0</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+                    <span>Guesses:</span>
+                    <strong id="deep-guess-count">0</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recommendation Alert -->
+            <div id="deep-recommendation-box" style="background-color: var(--color-card-surface); border: 1px solid var(--color-line); border-radius: var(--radius-card); padding: 1.25rem; border-left: 4px solid var(--color-brand-indigo);">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <div style="margin-top: 2.5rem; text-align: center;">
+            <button id="btn-proceed-recall-btm" class="btn btn-primary btn-large" onclick="BUDE_APP.proceedToRecall()">
+              Proceed to Stage 5: Recall (Flashcards &amp; Notes) →
+            </button>
+          </div>
+        </div><!-- End #stage-result-wrapper -->
+
+        <!-- STAGE 5: RECALL VIEW (FLASHCARDS & SHORT NOTES) -->
+        <div id="stage-recall-wrapper" class="card stage-card" style="display: none;">
+          <div class="stage-header" style="border-bottom: 1px solid var(--color-line); padding-bottom: 1.25rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <div style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 700; color: #0E7490; text-transform: uppercase;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #0D9C9C;"></span>
+                Stage 5 · High-Yield Recall &amp; Retention
+              </div>
+              <h3 id="recall-heading" style="font-size: 1.35rem; font-weight: 800; margin-top: 0.25rem; color: var(--color-ink);">Interactive Flashcards &amp; Short Notes</h3>
+            </div>
+            <div>
+              <button class="btn btn-secondary" onclick="BUDE_APP.returnToHome()">
+                🏠 Complete Sprint &amp; Return Home
+              </button>
+            </div>
+          </div>
+
+          <!-- Section A: 3D Flip Flashcards -->
+          <div class="recall-flashcards-section" style="margin-bottom: 3rem;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1rem;">
+              <h4 style="font-size: 1.15rem; font-weight: 800; color: var(--color-ink);">High-Yield Flashcards (Click to Flip)</h4>
+              <span class="text-soft" style="font-size: 0.85rem;">400ms 3D rotateY flip animation</span>
+            </div>
+            
+            <div id="flashcards-grid" class="flashcards-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem;">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Section B: Chapter Short Notes -->
+          <div class="recall-notes-section" style="border-top: 1px solid var(--color-line); padding-top: 2rem; margin-bottom: 2.5rem;">
+            <h4 style="font-size: 1.15rem; font-weight: 800; color: var(--color-ink); margin-bottom: 1.25rem;">Chapter Summary &amp; Key Derivations</h4>
+            <div id="short-notes-content" style="display: flex; flex-direction: column; gap: 1.5rem;">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Section C: High-Frequency Exam Tips -->
+          <div class="recall-tips-section" style="border-top: 1px solid var(--color-line); padding-top: 2rem;">
+            <h4 style="font-size: 1.15rem; font-weight: 800; color: var(--color-ink); margin-bottom: 1rem;">High-Frequency Board Exam Tips</h4>
+            <div id="exam-tips-container" style="background-color: var(--color-stage-learn); border: 1px solid #FCD34D; border-radius: var(--radius-card); padding: 1.5rem;">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <div style="margin-top: 3rem; text-align: center; border-top: 1px solid var(--color-line); padding-top: 2rem;">
+            <p class="text-soft" style="font-size: 0.95rem; margin-bottom: 1rem;">
+              Congratulations on completing your BUD-E Active Sprint!
+            </p>
+            <button class="btn btn-primary btn-large" onclick="BUDE_APP.returnToHome()">
+              Finish Sprint &amp; Back to Homepage →
+            </button>
+          </div>
+        </div><!-- End #stage-recall-wrapper -->
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Global Footer with Signature -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-meta">
+        <p class="footer-desc">
+          BUD-E — The Class 12 active learning sprint platform. Engineered for board exams, pre-boards, and school assessments.
+        </p>
+      </div>
+      <div class="footer-signature">
+        Crafted by Zahid Wasi
+      </div>
+    </div>
+  </footer>
+
+  <!-- BUD-E Data Modules -->
+  <script src="js/data/curriculum.js"></script>
+  <script src="js/data/calibration.js"></script>
+  <script src="js/data/videos.js?v=20261015"></script>
+  <script src="js/data/practice_bank.js"></script>
+  <script src="js/data/short_notes.js"></script>
+
+  <!-- External Integrations & Silent Logger -->
+  <script src="js/logger.js?v=20261013"></script>
+
+  <!-- Application Logic -->
+  <script src="js/app.js?v=20261023"></script>
+</body>
+</html>
