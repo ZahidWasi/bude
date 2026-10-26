@@ -59,32 +59,12 @@
 
   /**
    * IntersectionObserver for Smooth Entrance Animations
-   * Fade + slight rise (8–12px) triggered when section scrolls into view
+   * Pre-marked visible on load for zero scroll lag and maximum 60fps rendering
    */
   function initScrollAnimations() {
-    if ('IntersectionObserver' in window) {
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('visible');
-            observer.unobserve(entry.target);
-          }
-        });
-      }, {
-        root: null,
-        threshold: 0.1,
-        rootMargin: '0px 0px -40px 0px'
-      });
-
-      document.querySelectorAll('.fade-rise').forEach(el => {
-        observer.observe(el);
-      });
-    } else {
-      // Fallback for older browsers
-      document.querySelectorAll('.fade-rise').forEach(el => {
-        el.classList.add('visible');
-      });
-    }
+    document.querySelectorAll('.fade-rise').forEach(el => {
+      el.classList.add('visible');
+    });
   }
 
   /**
@@ -151,6 +131,13 @@
    * Phase 4 Onboarding Handlers & Monetization Gateways
    */
   function openOnboarding() {
+    const sprintContainer = document.getElementById('view-sprint-container');
+    if (sprintContainer && sprintContainer.style.display !== 'none') {
+      if (!confirm('You have a sprint currently in progress. Starting a new sprint will reset your current session. Do you want to continue?')) {
+        return;
+      }
+    }
+
     const nextSprint = state.monetization.sprintCount + 1;
     const hasUnlimited = (state.monetization.activeTier === 'monthly' || state.monetization.activeTier === 'board-pass') &&
       (!state.monetization.tierExpiry || Date.now() < state.monetization.tierExpiry);
@@ -348,24 +335,264 @@
   }
 
   /**
+   * Shuffles MCQ options (A, B, C, D) dynamically and tracks the new correct answer.
+   * Smart Guard: Skips shuffling if any option contains positional/letter-referencing phrases
+   * like "Both A and B", "All of the above", "None of these", "(a) and (b)", etc.
+   */
+  function shuffleQuestionOptions(question) {
+    if (!question || !question.options) return question;
+
+    // Smart Guard Regex: detect positional or self-referential options
+    const POSITIONAL_OPTION_REGEX = /\b(both\s+(?:options?\s+|statements?\s+)?(?:\([a-d1-4]\)|[a-d1-4])\s+and\s+(?:\([a-d1-4]\)|[a-d1-4])|all\s+(?:of\s+)?the\s+above|none\s+(?:of\s+)?(?:the\s+above|these)|neither\s+[a-d]\s+nor\s+[a-d]|either\s+[a-d]\s+or\s+[a-d]|only\s+(?:\([a-d]\)|[a-d])\b)/i;
+
+    const optionValues = Object.values(question.options);
+    const hasPositionalOption = optionValues.some(val => {
+      if (typeof val !== 'string') return false;
+      return POSITIONAL_OPTION_REGEX.test(val);
+    });
+
+    if (hasPositionalOption) {
+      // Preserve original option order to prevent logical absurdities
+      return question;
+    }
+
+    const originalLetters = ['A', 'B', 'C', 'D'];
+    const entries = originalLetters
+      .filter(l => question.options[l] !== undefined)
+      .map(l => ({ originalLetter: l, text: question.options[l] }));
+
+    if (entries.length < 2) return question;
+
+    // Fisher-Yates shuffle
+    for (let i = entries.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const temp = entries[i];
+      entries[i] = entries[j];
+      entries[j] = temp;
+    }
+
+    const newOptions = {};
+    let newCorrect = question.correctAnswer;
+    const oldCorrect = question.correctAnswer;
+
+    entries.forEach((item, idx) => {
+      const newLetter = originalLetters[idx];
+      newOptions[newLetter] = item.text;
+      if (item.originalLetter === oldCorrect) {
+        newCorrect = newLetter;
+      }
+    });
+
+    let newSolution = question.solution || '';
+    if (newSolution && oldCorrect !== newCorrect) {
+      newSolution = newSolution.replace(new RegExp(`\\b(is\\s*\\(?|option\\s*\\(?|answer\\s*is\\s*\\(?)` + oldCorrect + `(\\)?|\\.)`, 'gi'), `$1${newCorrect}$2`);
+    }
+
+    return {
+      ...question,
+      options: newOptions,
+      correctAnswer: newCorrect,
+      solution: newSolution
+    };
+  }
+
+  /**
    * ==========================================
-   * STAGE 1: CALIBRATE LOGIC
+   * SPRINT STATE VARIABLES & SESSION LIFECYCLE
    * ==========================================
    */
+  // Stage 1 variables
   let calibCurrentIndex = 0;
   let calibQuestionsList = [];
   let selectedOptionForCurrentQ = null;
 
+  // Stage 3 variables
+  let practiceQuestionsList = [];
+  let practiceCurrentIndex = 0;
+  let practiceSelectedOption = null;
+  let practiceHasAttemptedCurrentQ = false;
+  let practiceCurrentIsCorrect = false;
+
+  // Stage 4 variables
+  let testQuestionsList = [];
+  let testCurrentIndex = 0;
+  let testSelectedOption = null;
+  let testCountdownInterval = null;
+  let testTimeRemainingSeconds = 15 * 60;
+
+  // Break & Stopwatch variables
+  let sprintTimerInterval = null;
+  let breakCheckInterval = null;
+  let activeBreakInterval = null;
+  let breakStartTimestamp = null;
+  let tenMinWarningSent = false;
+  let fifteenMinParentAlertSent = false;
+
+  /**
+   * Complete Sprint Session Reset
+   * Cleans up all DOM stage wrappers, sub-screens, state objects, indices, and active timers.
+   * Guarantees that any new sprint starts completely fresh from Stage 1, Question 1.
+   */
+  function resetSprintSession() {
+    console.log('[BUD-E] Resetting sprint session to fresh state...');
+
+    // 1. Clear all active intervals & background timers
+    if (sprintTimerInterval) {
+      clearInterval(sprintTimerInterval);
+      sprintTimerInterval = null;
+    }
+    if (testCountdownInterval) {
+      clearInterval(testCountdownInterval);
+      testCountdownInterval = null;
+    }
+    if (breakCheckInterval) {
+      clearInterval(breakCheckInterval);
+      breakCheckInterval = null;
+    }
+    if (activeBreakInterval) {
+      clearInterval(activeBreakInterval);
+      activeBreakInterval = null;
+    }
+
+    // Reset clock display
+    const clockEl = document.getElementById('sprint-clock');
+    if (clockEl) clockEl.textContent = '00:00';
+
+    // 2. Reset Stage Card Wrappers visibility
+    const calibWrapper = document.getElementById('stage-calibrate-wrapper');
+    const learnWrapper = document.getElementById('stage-learn-wrapper');
+    const pracWrapper = document.getElementById('stage-practice-wrapper');
+    const testWrapper = document.getElementById('stage-test-wrapper');
+    const resultWrapper = document.getElementById('stage-result-wrapper');
+    const recallWrapper = document.getElementById('stage-recall-wrapper');
+
+    if (calibWrapper) calibWrapper.style.display = 'block';
+    if (learnWrapper) learnWrapper.style.display = 'none';
+    if (pracWrapper) pracWrapper.style.display = 'none';
+    if (testWrapper) testWrapper.style.display = 'none';
+    if (resultWrapper) resultWrapper.style.display = 'none';
+    if (recallWrapper) recallWrapper.style.display = 'none';
+
+    // 3. Reset Stage 1: Calibrate sub-containers & state
+    calibCurrentIndex = 0;
+    calibQuestionsList = [];
+    selectedOptionForCurrentQ = null;
+    state.calibration.score = 0;
+    state.calibration.level = null;
+    state.calibration.answers = {};
+
+    const calibQContainer = document.getElementById('calib-question-container');
+    const calibResContainer = document.getElementById('calib-result-container');
+    if (calibQContainer) calibQContainer.style.display = 'block';
+    if (calibResContainer) calibResContainer.style.display = 'none';
+
+    // 4. Reset Stage 2: Learn video container
+    const videoWrapper = document.getElementById('video-frame-wrapper');
+    if (videoWrapper) videoWrapper.innerHTML = '';
+
+    // 5. Reset Stage 3: Practice sub-containers & state
+    practiceCurrentIndex = 0;
+    practiceQuestionsList = [];
+    practiceSelectedOption = null;
+    practiceHasAttemptedCurrentQ = false;
+    practiceCurrentIsCorrect = false;
+
+    state.practice.currentIndex = 0;
+    state.practice.totalQuestions = 0;
+    state.practice.confidenceMeter = 50;
+    state.practice.errors = { sillyMistake: 0, conceptGap: 0, guess: 0 };
+
+    const pracQContainer = document.getElementById('prac-question-container');
+    const pracCompleteContainer = document.getElementById('prac-completion-container');
+    const pracHintBox = document.getElementById('prac-hint-box');
+    const pracErrorTagger = document.getElementById('prac-error-tagger');
+    const pracSolutionArea = document.getElementById('prac-solution-area');
+    const pracSolutionBox = document.getElementById('prac-solution-box');
+
+    if (pracQContainer) pracQContainer.style.display = 'block';
+    if (pracCompleteContainer) pracCompleteContainer.style.display = 'none';
+    if (pracHintBox) pracHintBox.style.display = 'none';
+    if (pracErrorTagger) pracErrorTagger.style.display = 'none';
+    if (pracSolutionArea) pracSolutionArea.style.display = 'none';
+    if (pracSolutionBox) pracSolutionBox.style.display = 'none';
+
+    updateConfidenceMeterUI();
+    updateErrorChipsUI();
+
+    // 6. Reset Stage 4: Test sub-containers & state
+    testCurrentIndex = 0;
+    testQuestionsList = [];
+    testSelectedOption = null;
+    testTimeRemainingSeconds = 15 * 60;
+
+    state.test.score = 0;
+    state.test.total = 10;
+    state.test.passed = false;
+    state.test.answers = {};
+
+    const testQContainer = document.getElementById('test-question-container');
+    const testReviewContainer = document.getElementById('test-review-container');
+    const testClockEl = document.getElementById('test-countdown-timer');
+    if (testQContainer) testQContainer.style.display = 'block';
+    if (testReviewContainer) testReviewContainer.style.display = 'none';
+    if (testClockEl) testClockEl.textContent = '15:00';
+
+    // 7. Reset Stage 5: Recall containers
+    const fcGrid = document.getElementById('flashcards-grid');
+    const notesContainer = document.getElementById('short-notes-content');
+    const tipsContainer = document.getElementById('exam-tips-container');
+    if (fcGrid) fcGrid.innerHTML = '';
+    if (notesContainer) notesContainer.innerHTML = '';
+    if (tipsContainer) tipsContainer.innerHTML = '';
+
+    // 8. Reset Break system state
+    state.breakTimer.sprintStart = Date.now();
+    state.breakTimer.inBreak = false;
+    state.breakTimer.breakStart = null;
+    tenMinWarningSent = false;
+    fifteenMinParentAlertSent = false;
+
+    // Close any active break modal/overlay
+    const breakPromptModal = document.getElementById('modal-break-prompt');
+    const breakActiveOverlay = document.getElementById('overlay-break-active');
+    if (breakPromptModal) breakPromptModal.classList.remove('active');
+    if (breakActiveOverlay) breakActiveOverlay.classList.remove('active');
+
+    // 9. Reset Stepper UI to Step 1
+    updateStepper(1);
+  }
+
+  /**
+   * ==========================================
+   * STAGE 1: CALIBRATE LOGIC
+   * ==========================================
+   */
   function startCalibrationStage() {
     const subject = state.student.subject;
     const chapter = state.student.chapter;
 
-    // Retrieve exactly 10 questions for the selected chapter
-    calibQuestionsList = (window.BUDE_CALIBRATION && window.BUDE_CALIBRATION[subject] && window.BUDE_CALIBRATION[subject][chapter]) || [];
+    // Fully reset all stage wrappers, sub-screens, state, and previous timers
+    resetSprintSession();
+
+    // Retrieve exactly 10 questions for the selected chapter with verified correct answers
+    calibQuestionsList = [];
+    if (window.BUDE_PRACTICE && typeof window.BUDE_PRACTICE.getCalibrationQuestions === 'function') {
+      calibQuestionsList = window.BUDE_PRACTICE.getCalibrationQuestions(subject, chapter);
+    }
+    if (!calibQuestionsList || calibQuestionsList.length === 0) {
+      calibQuestionsList = (window.BUDE_CALIBRATION && window.BUDE_CALIBRATION[subject] && window.BUDE_CALIBRATION[subject][chapter]) || [];
+    }
     if (!calibQuestionsList || calibQuestionsList.length === 0) {
       console.warn(`[BUD-E] No calibration questions found for ${subject} -> ${chapter}. Falling back to Electric Charges and Fields.`);
-      calibQuestionsList = (window.BUDE_CALIBRATION && window.BUDE_CALIBRATION["Physics"]["Electric Charges and Fields"]) || [];
+      if (window.BUDE_PRACTICE && typeof window.BUDE_PRACTICE.getCalibrationQuestions === 'function') {
+        calibQuestionsList = window.BUDE_PRACTICE.getCalibrationQuestions("Physics", "Electric Charges and Fields");
+      } else {
+        calibQuestionsList = (window.BUDE_CALIBRATION && window.BUDE_CALIBRATION["Physics"]["Electric Charges and Fields"]) || [];
+      }
     }
+
+    // Dynamic anti-guessing option shuffle
+    calibQuestionsList = calibQuestionsList.map(q => shuffleQuestionOptions(q));
 
     calibCurrentIndex = 0;
     state.calibration.score = 0;
@@ -529,6 +756,21 @@
     }
     if (explanationEl) explanationEl.textContent = explanation;
 
+    // Render transparent question-by-question breakdown
+    const breakdownEl = document.getElementById('calib-breakdown-container');
+    if (breakdownEl) {
+      let pillsHtml = '<div style="font-size:0.75rem; font-weight:700; color:var(--color-ink-soft); margin-bottom:0.6rem; text-transform:uppercase; letter-spacing:0.04em;">Question Breakdown:</div><div style="display:flex; gap:6px; justify-content:center; flex-wrap:wrap;">';
+      for (let i = 0; i < 10; i++) {
+        const a = state.calibration.answers[i];
+        if (a) {
+          const isC = a.isCorrect;
+          pillsHtml += `<span title="Q${i+1}: You selected (${a.chosen}), Correct was (${a.correct})" style="padding:4px 8px; border-radius:6px; font-size:0.78rem; font-weight:700; background-color:${isC ? '#DCFCE7' : '#FEE2E2'}; color:${isC ? '#166534' : '#991B1B'}; border:1px solid ${isC ? '#86EFAC' : '#FECACA'}; cursor:default;">Q${i+1}: ${isC ? '✓' : '✗ (' + a.correct + ')'}</span>`;
+        }
+      }
+      pillsHtml += '</div>';
+      breakdownEl.innerHTML = pillsHtml;
+    }
+
     console.log(`[BUD-E Calibration] Finished: ${score}/10 -> Assigned Level: ${level}`);
   }
 
@@ -626,12 +868,6 @@
    * STAGE 3: PRACTICE LOGIC
    * ==========================================
    */
-  let practiceQuestionsList = [];
-  let practiceCurrentIndex = 0;
-  let practiceSelectedOption = null;
-  let practiceHasAttemptedCurrentQ = false;
-  let practiceCurrentIsCorrect = false;
-
   function proceedToStage3() {
     console.log('[BUD-E] Launching Stage 3: Practice');
     updateStepper(3);
@@ -649,6 +885,8 @@
 
     // Retrieve practice set based on chapter, level and time budget
     practiceQuestionsList = window.BUDE_PRACTICE.getPracticeQuestions(subject, chapter, level, timeBudget);
+    // Dynamic anti-guessing option shuffle
+    practiceQuestionsList = practiceQuestionsList.map(q => shuffleQuestionOptions(q));
     practiceCurrentIndex = 0;
     state.practice.totalQuestions = practiceQuestionsList.length;
     state.practice.confidenceMeter = 50; // starts at baseline 50%
@@ -889,12 +1127,6 @@
    * STAGE 4: TEST LOGIC (EXAM SIMULATION)
    * ==========================================
    */
-  let testQuestionsList = [];
-  let testCurrentIndex = 0;
-  let testSelectedOption = null;
-  let testCountdownInterval = null;
-  let testTimeRemainingSeconds = 15 * 60; // 15-minute standard board test
-
   function proceedToStage4() {
     console.log('[BUD-E] Launching Stage 4: Test (Exam Simulation)');
     updateStepper(4);
@@ -910,6 +1142,8 @@
 
     // Load 10 standard moderate-to-difficult MCQs (same for all students)
     testQuestionsList = window.BUDE_PRACTICE.getTestQuestions(subject, chapter);
+    // Dynamic anti-guessing option shuffle
+    testQuestionsList = testQuestionsList.map(q => shuffleQuestionOptions(q));
     testCurrentIndex = 0;
     state.test.score = 0;
     state.test.total = testQuestionsList.length;
@@ -1114,6 +1348,7 @@
     }
 
     console.log(`[BUD-E Test] Test complete: ${score}/10. Threshold passed: ${passed}`);
+    recordCompletedSprint();
   }
 
   /**
@@ -1123,6 +1358,7 @@
    */
   function proceedToStage5Result() {
     console.log('[BUD-E] Generating Result Page & Proof of Learning Card');
+    recordCompletedSprint();
 
     // Hide Test wrapper, show Result wrapper
     const testWrapper = document.getElementById('stage-test-wrapper');
@@ -1262,7 +1498,6 @@
         calibrationLevel: diagLevel,
         testScore: testScore,
         confidenceScore: confScore,
-        feedback: `Sprint Completed. Test: ${testScore}/10, Conf: ${confScore}%, Silly: ${state.practice.errors.sillyMistake}, Concept: ${state.practice.errors.conceptGap}, Guess: ${state.practice.errors.guess}`,
         tier: state.monetization.activeTier,
         sprint_number: state.monetization.currentSprintNumber,
         signup_completed: !!state.auth.signedIn,
@@ -1418,8 +1653,9 @@ Sprint Verified by BUD-E (Build · Understand · Drill · Evaluate)`;
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  function returnToHome() {
-    if (confirm('Finish this learning sprint and return to the BUD-E homepage?')) {
+  function returnToHome(skipConfirm = false) {
+    if (skipConfirm || confirm('Finish this learning sprint and return to the BUD-E homepage?')) {
+      resetSprintSession();
       const homeView = document.getElementById('view-homepage');
       const sprintContainer = document.getElementById('view-sprint-container');
       if (homeView) homeView.style.display = 'block';
@@ -1576,14 +1812,7 @@ Sprint Verified by BUD-E (Build · Understand · Drill · Evaluate)`;
    * PHASE 11: BREAK SYSTEM & ACCOUNTABILITY
    * ==========================================
    */
-  let breakCheckInterval = null;
-  let activeBreakInterval = null;
-  let breakStartTimestamp = null;
-  let tenMinWarningSent = false;
-  let fifteenMinParentAlertSent = false;
-
   // Active Sprint Stopwatch with 45-minute Break Trigger
-  let sprintTimerInterval = null;
   function startSprintClock() {
     if (sprintTimerInterval) clearInterval(sprintTimerInterval);
     state.breakTimer.sprintStart = state.breakTimer.sprintStart || Date.now();
@@ -1760,77 +1989,6 @@ Sprint Verified by BUD-E (Build · Understand · Drill · Evaluate)`;
     }
   });
 
-  /**
-   * ==========================================
-   * ADMIN SPRINT RECORDS VIEWER (LOCAL ACCESS)
-   * ==========================================
-   */
-  function openAdminRecords() {
-    const modal = document.getElementById('modal-admin-records');
-    const tableWrap = document.getElementById('admin-records-table-wrap');
-    const countBadge = document.getElementById('admin-records-count');
-
-    if (!modal) return;
-    modal.classList.add('active');
-
-    const records = window.BUDE_LOGGER ? window.BUDE_LOGGER.getLocalRecords() : [];
-    if (countBadge) countBadge.textContent = `${records.length} Records Stored`;
-
-    if (tableWrap) {
-      if (records.length === 0) {
-        tableWrap.innerHTML = `
-          <div style="padding: 2.5rem 1rem; text-align: center; color: var(--color-ink-soft);">
-            <div style="font-size: 2rem; margin-bottom: 0.5rem;">📂</div>
-            <p>No sprint records stored yet.</p>
-            <p style="font-size: 0.8rem; margin-top: 0.25rem;">Submit an onboarding form or feedback to see records populated here instantly.</p>
-          </div>
-        `;
-      } else {
-        let rows = records.map((r, i) => `
-          <tr style="border-bottom: 1px solid var(--color-line); font-size: 0.85rem;">
-            <td style="padding: 0.75rem 0.6rem; color: var(--color-ink); font-weight: 600;">${i + 1}</td>
-            <td style="padding: 0.75rem 0.6rem; color: var(--color-ink); font-weight: 700;">${r.name || 'Anonymous'}</td>
-            <td style="padding: 0.75rem 0.6rem; color: var(--color-ink-soft);">${r.subject || '—'}</td>
-            <td style="padding: 0.75rem 0.6rem; color: var(--color-ink-soft);">${r.chapter || '—'}</td>
-            <td style="padding: 0.75rem 0.6rem;"><span class="pill pill-brand" style="font-size: 0.7rem;">${r.calibrationLevel || '—'}</span></td>
-            <td style="padding: 0.75rem 0.6rem; font-weight: 700;">${r.testScore !== undefined ? r.testScore + '/10' : '—'}</td>
-            <td style="padding: 0.75rem 0.6rem; color: var(--color-ink-soft); font-size: 0.75rem;">${r.timestamp ? new Date(r.timestamp).toLocaleTimeString() : '—'}</td>
-          </tr>
-        `).join('');
-
-        tableWrap.innerHTML = `
-          <table style="width: 100%; border-collapse: collapse; text-align: left;">
-            <thead>
-              <tr style="background-color: var(--color-paper-alt); border-bottom: 1px solid var(--color-line); font-size: 0.75rem; color: var(--color-ink-soft); text-transform: uppercase;">
-                <th style="padding: 0.6rem;">#</th>
-                <th style="padding: 0.6rem;">Name</th>
-                <th style="padding: 0.6rem;">Subject</th>
-                <th style="padding: 0.6rem;">Chapter</th>
-                <th style="padding: 0.6rem;">Band</th>
-                <th style="padding: 0.6rem;">Test</th>
-                <th style="padding: 0.6rem;">Time</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rows}
-            </tbody>
-          </table>
-        `;
-      }
-    }
-  }
-
-  function closeAdminRecords() {
-    const modal = document.getElementById('modal-admin-records');
-    if (modal) modal.classList.remove('active');
-  }
-
-  function clearAdminRecords() {
-    if (confirm('Clear all stored sprint records from this browser?')) {
-      localStorage.removeItem('bude_sprint_records');
-      openAdminRecords();
-    }
-  }
 
   /**
    * ==========================================
@@ -1998,7 +2156,6 @@ Sprint Verified by BUD-E (Build · Understand · Drill · Evaluate)`;
     if (window.BUDE_LOGGER && window.BUDE_LOGGER.silentLog) {
       window.BUDE_LOGGER.silentLog({
         name: name,
-        feedback: `User signed in via Google: ${email}`,
         tier: state.monetization.activeTier,
         sprint_number: state.monetization.sprintCount + 1,
         signup_completed: true,
@@ -2033,7 +2190,6 @@ Sprint Verified by BUD-E (Build · Understand · Drill · Evaluate)`;
       window.BUDE_LOGGER.silentLog({
         name: defaultName,
         parentPhone: phone,
-        feedback: `User signed in via Phone: +91-${phone}`,
         tier: state.monetization.activeTier,
         sprint_number: state.monetization.sprintCount + 1,
         signup_completed: true,
@@ -2245,7 +2401,6 @@ Sprint Verified by BUD-E (Build · Understand · Drill · Evaluate)`;
         subject: state.student.subject || '',
         chapter: state.student.chapter || '',
         parentPhone: state.student.parentPhone || state.auth.phone || '',
-        feedback: `Payment verified (${priceDisplay} via Razorpay ID: ${paymentId})`,
         tier: state.monetization.activeTier,
         sprint_number: state.monetization.currentSprintNumber,
         signup_completed: !!state.auth.signedIn,
@@ -2291,10 +2446,433 @@ Sprint Verified by BUD-E (Build · Understand · Drill · Evaluate)`;
     alert(`BUD-E reset to Sprint #${sprintNumber} mode!`);
   }
 
+  /**
+   * ==========================================
+   * STUDENT DASHBOARD & SPRINT VAULT CONTROLLER
+   * ==========================================
+   */
+  function getSprintHistory() {
+    try {
+      return JSON.parse(localStorage.getItem('bude_student_sprint_history') || '[]');
+    } catch (e) {
+      console.warn('[BUD-E Dashboard] getSprintHistory error:', e);
+      return [];
+    }
+  }
+
+  function recordCompletedSprint() {
+    const studentName = state.student.name || state.auth.name || 'Class 12 Student';
+    const subject = state.student.subject || 'Physics';
+    const chapter = state.student.chapter || 'Electric Charges and Fields';
+    const timeBudget = state.student.timeBudget || '2hrs';
+    const testScore = state.test.score || 0;
+    const testPassed = (testScore >= 7);
+    const confidenceScore = state.practice.confidenceMeter || 50;
+    const calibrationLevel = state.calibration.level || 'Intermediate';
+    const calibrationScore = state.calibration.score || 0;
+    const errors = { ...state.practice.errors };
+
+    const history = getSprintHistory();
+    // Check if an entry for this exact chapter exists from recent 2 hours
+    const existingIndex = history.findIndex(s => s.subject === subject && s.chapter === chapter && Math.abs(Date.now() - s.timestamp) < 7200000);
+
+    const record = {
+      id: 'sprint_' + Date.now(),
+      timestamp: Date.now(),
+      date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+      studentName: studentName,
+      subject: subject,
+      chapter: chapter,
+      timeBudget: timeBudget,
+      testScore: testScore,
+      testPassed: testPassed,
+      confidenceScore: confidenceScore,
+      calibrationLevel: calibrationLevel,
+      calibrationScore: calibrationScore,
+      errors: errors
+    };
+
+    if (existingIndex >= 0) {
+      history[existingIndex] = record;
+    } else {
+      history.unshift(record); // newest first
+    }
+
+    try {
+      localStorage.setItem('bude_student_sprint_history', JSON.stringify(history));
+      console.log('[BUD-E Dashboard] Sprint recorded successfully:', record);
+    } catch (e) {
+      console.warn('[BUD-E Dashboard] Could not save sprint record:', e);
+    }
+  }
+
+  function openStudentDashboard() {
+    const modal = document.getElementById('modal-dashboard');
+    if (!modal) return;
+
+    const history = getSprintHistory();
+    const studentName = state.auth.name || state.student.name || 'Student';
+
+    // Populate profile banner
+    const nameEl = document.getElementById('dash-student-name');
+    const avatarEl = document.getElementById('dash-avatar');
+    const tierEl = document.getElementById('dash-tier-status');
+
+    if (nameEl) nameEl.textContent = studentName;
+    if (avatarEl) avatarEl.textContent = (studentName.charAt(0) || 'S').toUpperCase();
+    if (tierEl) {
+      const tier = state.monetization.activeTier;
+      tierEl.textContent = tier === 'monthly' ? '✨ Monthly Pack (Unlimited Access)' : (tier === 'board-pass' ? '🏆 Board Exam Pass (All Subjects)' : `Sprint #${state.monetization.sprintCount + 1} · Free Tier`);
+    }
+
+    // Calculate aggregate metrics
+    const totalSprints = history.length;
+    const masteredCount = history.filter(s => s.testPassed || s.testScore >= 7).length;
+    let avgConf = 50;
+    if (totalSprints > 0) {
+      const totalConf = history.reduce((acc, curr) => acc + (curr.confidenceScore || 50), 0);
+      avgConf = Math.round(totalConf / totalSprints);
+    }
+    const totalHours = history.length * 2; // ~2 hours per sprint
+
+    const statTotal = document.getElementById('dash-stat-total');
+    const statMastered = document.getElementById('dash-stat-mastered');
+    const statConf = document.getElementById('dash-stat-conf');
+    const statHours = document.getElementById('dash-stat-hours');
+    const historyCount = document.getElementById('dash-history-count');
+
+    if (statTotal) statTotal.textContent = totalSprints;
+    if (statMastered) statMastered.textContent = masteredCount;
+    if (statConf) statConf.textContent = `${avgConf}%`;
+    if (statHours) statHours.textContent = `${totalHours}h`;
+    if (historyCount) historyCount.textContent = `${totalSprints} Sprint${totalSprints === 1 ? '' : 's'}`;
+
+    // Render cards list
+    const container = document.getElementById('dash-sprints-container');
+    if (container) {
+      container.innerHTML = '';
+
+      if (totalSprints === 0) {
+        container.innerHTML = `
+          <div class="dashboard-empty-state">
+            <div class="dashboard-empty-icon">🚀</div>
+            <h4 style="font-size: 1.25rem; font-weight: 800; color: var(--color-ink); margin-bottom: 0.5rem;">No Sprints Completed Yet</h4>
+            <p class="text-soft" style="max-width: 480px; margin: 0 auto 1.5rem auto; font-size: 0.92rem; line-height: 1.6;">
+              Start your first active learning sprint to calibrate your baseline, solve board exam questions, and automatically build your personal revision vault.
+            </p>
+            <button class="btn btn-primary" onclick="BUDE_APP.closeStudentDashboard(); BUDE_APP.openOnboarding();">
+              Start Your First Sprint →
+            </button>
+          </div>
+        `;
+      } else {
+        history.forEach(sprint => {
+          const isPassed = sprint.testPassed || sprint.testScore >= 7;
+          const card = document.createElement('div');
+          card.className = 'dashboard-sprint-card';
+
+          const badgeColor = isPassed ? '#16A34A' : '#D97706';
+          const badgeBg = isPassed ? '#DCFCE7' : '#FEF3C7';
+          const badgeBorder = isPassed ? '#86EFAC' : '#FDE68A';
+          const badgeText = isPassed ? `CAN SOLVE · ${sprint.testScore}/10` : `NEEDS 1 MORE DRILL · ${sprint.testScore}/10`;
+
+          card.innerHTML = `
+            <div class="dashboard-card-main">
+              <div class="dashboard-card-meta">
+                <span class="pill pill-brand" style="font-size: 0.72rem; padding: 0.2rem 0.65rem;">${sprint.subject}</span>
+                <span class="text-soft" style="font-size: 0.8rem;">📅 ${sprint.date}</span>
+                <span class="text-soft" style="font-size: 0.8rem;">⏱️ ${sprint.timeBudget || '2hrs'} Sprint</span>
+              </div>
+              <h4 class="dashboard-card-title">${sprint.chapter}</h4>
+              <div class="dashboard-card-sub">
+                <span>Diagnostic Band: <strong>${sprint.calibrationLevel || 'Intermediate'}</strong></span>
+                <span>Final Confidence: <strong>${sprint.confidenceScore || 50}%</strong></span>
+              </div>
+              <div class="dashboard-card-badges">
+                <span class="pill" style="background-color: ${badgeBg}; color: ${badgeColor}; border: 1px solid ${badgeBorder}; font-size: 0.75rem; font-weight: 800;">
+                  ${badgeText}
+                </span>
+              </div>
+            </div>
+            <div class="dashboard-card-actions">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="BUDE_APP.openQuickRecall('${sprint.subject}', '${sprint.chapter.replace(/'/g, "\\'")}')" style="font-weight: 700;">
+                📖 Review Notes &amp; Flashcards
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="BUDE_APP.viewPastProofOfLearning('${sprint.id}')" style="font-weight: 700;">
+                🎓 Proof of Learning
+              </button>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      }
+    }
+
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeStudentDashboard() {
+    const modal = document.getElementById('modal-dashboard');
+    if (modal) {
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+  }
+
+  /**
+   * Quick Recall Reader Controller (Vault Flashcards & Notes)
+   */
+  let currentRecallSubject = 'Physics';
+  let currentRecallChapter = 'Electric Charges and Fields';
+  let activeRecallTab = 'flashcards';
+
+  function openQuickRecall(subject, chapter, tab = 'flashcards') {
+    currentRecallSubject = subject;
+    currentRecallChapter = chapter;
+    activeRecallTab = tab;
+
+    const modal = document.getElementById('modal-quick-recall');
+    const titleEl = document.getElementById('qr-modal-title');
+    if (!modal) return;
+
+    if (titleEl) {
+      titleEl.textContent = `${subject}: ${chapter}`;
+    }
+
+    switchQuickRecallTab(tab);
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeQuickRecall() {
+    const modal = document.getElementById('modal-quick-recall');
+    if (modal) {
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+  }
+
+  function switchQuickRecallTab(tab) {
+    activeRecallTab = tab;
+
+    // Tab buttons styling
+    const tabFc = document.getElementById('qr-tab-fc');
+    const tabNotes = document.getElementById('qr-tab-notes');
+    const tabTips = document.getElementById('qr-tab-tips');
+
+    [tabFc, tabNotes, tabTips].forEach(b => {
+      if (b) {
+        b.className = 'btn btn-secondary btn-sm';
+        b.style.borderRadius = '20px';
+      }
+    });
+
+    if (tab === 'flashcards' && tabFc) tabFc.className = 'btn btn-primary btn-sm';
+    if (tab === 'notes' && tabNotes) tabNotes.className = 'btn btn-primary btn-sm';
+    if (tab === 'tips' && tabTips) tabTips.className = 'btn btn-primary btn-sm';
+
+    // Retrieve study material
+    let studyMaterial = null;
+    if (window.BUDE_SHORT_NOTES && window.BUDE_SHORT_NOTES[currentRecallSubject] && window.BUDE_SHORT_NOTES[currentRecallSubject][currentRecallChapter]) {
+      studyMaterial = window.BUDE_SHORT_NOTES[currentRecallSubject][currentRecallChapter];
+    }
+    if (!studyMaterial && window.BUDE_SHORT_NOTES && window.BUDE_SHORT_NOTES["Physics"]) {
+      studyMaterial = window.BUDE_SHORT_NOTES["Physics"]["Electric Charges and Fields"];
+    }
+
+    const countEl = document.getElementById('qr-fc-count');
+    if (countEl && studyMaterial && studyMaterial.flashcards) {
+      countEl.textContent = studyMaterial.flashcards.length;
+    }
+
+    const contentArea = document.getElementById('qr-content-area');
+    if (!contentArea || !studyMaterial) return;
+    contentArea.innerHTML = '';
+
+    if (tab === 'flashcards') {
+      const grid = document.createElement('div');
+      grid.style.display = 'grid';
+      grid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(280px, 1fr))';
+      grid.style.gap = '1.25rem';
+      grid.style.padding = '0.5rem 0';
+
+      (studyMaterial.flashcards || []).forEach((card, idx) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'flashcard-wrapper';
+        wrap.innerHTML = `
+          <div class="flashcard" onclick="this.classList.toggle('flipped')">
+            <div class="flashcard-face flashcard-front">
+              <span class="text-soft" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">FLASHCARD ${idx + 1}</span>
+              <p style="font-size: 1.05rem; font-weight: 700; color: var(--color-ink);">${renderFormulas(card.front)}</p>
+              <span class="text-soft" style="font-size: 0.75rem; margin-top: 1rem; color: var(--color-brand-indigo);">Tap to Flip ↻</span>
+            </div>
+            <div class="flashcard-face flashcard-back">
+              <span class="text-soft" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem; color: var(--color-brand-indigo);">ANSWER / FORMULA</span>
+              <p style="font-size: 0.95rem; font-weight: 600; color: var(--color-ink);">${renderFormulas(card.back)}</p>
+              <span class="text-soft" style="font-size: 0.75rem; margin-top: 1rem;">Tap to Flip ↺</span>
+            </div>
+          </div>
+        `;
+        grid.appendChild(wrap);
+      });
+      contentArea.appendChild(grid);
+      typesetMath(grid);
+    } else if (tab === 'notes') {
+      (studyMaterial.shortNotes || []).forEach(section => {
+        const secDiv = document.createElement('div');
+        secDiv.className = 'card';
+        secDiv.style.backgroundColor = 'var(--color-paper-alt)';
+        secDiv.style.padding = '1.25rem 1.5rem';
+        secDiv.style.marginBottom = '1rem';
+
+        let bulletsHtml = section.content.map(pt => `<li style="margin-bottom: 0.4rem; color: var(--color-ink);">${renderFormulas(pt)}</li>`).join('');
+        secDiv.innerHTML = `
+          <h5 style="font-size: 1.05rem; font-weight: 800; color: var(--color-brand-indigo); margin-bottom: 0.75rem;">${section.sectionTitle}</h5>
+          <ul style="padding-left: 1.25rem; font-size: 0.95rem; line-height: 1.6;">
+            ${bulletsHtml}
+          </ul>
+        `;
+        contentArea.appendChild(secDiv);
+      });
+      typesetMath(contentArea);
+    } else if (tab === 'tips') {
+      const tipsDiv = document.createElement('div');
+      tipsDiv.className = 'card';
+      tipsDiv.style.backgroundColor = '#FEF3C7';
+      tipsDiv.style.borderColor = '#FDE68A';
+      tipsDiv.style.padding = '1.5rem';
+
+      let tipsHtml = (studyMaterial.examTips || []).map(tip => `<li style="margin-bottom: 0.6rem; color: #78350F; font-size: 0.95rem;">${renderFormulas(tip)}</li>`).join('');
+      tipsDiv.innerHTML = `
+        <h5 style="font-size: 1.1rem; font-weight: 800; color: #92400E; margin-bottom: 0.75rem;">💡 High-Frequency Board Exam Pointers</h5>
+        <ul style="padding-left: 1.25rem; line-height: 1.6;">
+          ${tipsHtml}
+        </ul>
+      `;
+      contentArea.appendChild(tipsDiv);
+      typesetMath(contentArea);
+    }
+  }
+
+  /**
+   * View Past Verified Proof of Learning Card Modal
+   */
+  let currentPastProofSummaryText = '';
+  function viewPastProofOfLearning(sprintId) {
+    const history = getSprintHistory();
+    const sprint = history.find(s => s.id === sprintId) || history[0];
+    if (!sprint) return;
+
+    const modal = document.getElementById('modal-pol-view');
+    const container = document.getElementById('pol-modal-render-container');
+    if (!modal || !container) return;
+
+    const isPassed = sprint.testPassed || sprint.testScore >= 7;
+
+    currentPastProofSummaryText = `BUD-E PROOF OF LEARNING VERIFIED
+Student: ${sprint.studentName}
+Topic: ${sprint.subject} — ${sprint.chapter}
+Sprint Duration: ${sprint.timeBudget || '2hrs'}
+Date: ${sprint.date}
+Test Score: ${sprint.testScore}/10 ${isPassed ? '(CAN SOLVE ✓)' : ''}
+Final Confidence: ${sprint.confidenceScore || 50}%
+Diagnostic Level: ${sprint.calibrationLevel || 'Intermediate'}
+Sprint Verified by BUD-E (Build · Understand · Drill · Evaluate)`;
+
+    container.innerHTML = `
+      <div class="pol-card" style="box-shadow: 0 4px 20px rgba(15, 20, 48, 0.08); border: 2px solid var(--color-brand-indigo);">
+        <div class="pol-header">
+          <div class="pol-brand-wrap">
+            <img src="assets/logo.png?v=2" alt="BUD-E Logo" class="pol-logo">
+            <div>
+              <div class="pol-app-title">BUD-E PROOF OF LEARNING</div>
+              <div class="pol-date">${sprint.date}</div>
+            </div>
+          </div>
+          <div>
+            ${isPassed ? `
+              <div class="badge-can-solve" style="background-color: var(--color-stage-practice); color: var(--color-success); border: 1px solid var(--color-success);">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                CAN SOLVE
+              </div>
+            ` : `
+              <div class="badge-can-solve" style="background-color: #FEF3C7; color: #92400E; border: 1px solid #FCD34D;">
+                NEEDS 1 MORE DRILL
+              </div>
+            `}
+          </div>
+        </div>
+        <div class="pol-body">
+          <div class="pol-student">
+            <span class="pol-label">STUDENT</span>
+            <div class="pol-name">${sprint.studentName}</div>
+          </div>
+          <div class="pol-topic">
+            <span class="pol-label">TOPIC &amp; SPRINT TIME</span>
+            <div class="pol-topic-title">${sprint.subject}: ${sprint.chapter}</div>
+            <div class="pol-duration-text">Time Invested: ${sprint.timeBudget || '2 Hours'} Active Learning Sprint</div>
+          </div>
+          <div class="pol-metrics-grid">
+            <div class="metric-box">
+              <span class="metric-label">TEST SCORE</span>
+              <div class="metric-value"><span class="${isPassed ? 'score-high' : ''}">${sprint.testScore}</span> / 10</div>
+            </div>
+            <div class="metric-box">
+              <span class="metric-label">CONFIDENCE METER</span>
+              <div class="metric-value">${sprint.confidenceScore || 50}%</div>
+            </div>
+            <div class="metric-box">
+              <span class="metric-label">DIAGNOSTIC BAND</span>
+              <div class="metric-value" style="color: var(--color-brand-indigo);">${sprint.calibrationLevel || 'Intermediate'}</div>
+            </div>
+          </div>
+        </div>
+        <div class="pol-footer">
+          <span class="pol-footer-brand">BUD-E · Build · Understand · Drill · Evaluate</span>
+          <span class="pol-footer-badge">Class 12 Boards Sprint Verified</span>
+        </div>
+      </div>
+    `;
+
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closePastProofCard() {
+    const modal = document.getElementById('modal-pol-view');
+    if (modal) {
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+  }
+
+  function copyPastProofSummary() {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(currentPastProofSummaryText).then(() => {
+        alert('Verified Proof of Learning summary copied to clipboard!');
+      });
+    } else {
+      alert(currentPastProofSummaryText);
+    }
+  }
+
   // Public Interface
   window.BUDE_APP = {
     state,
+    resetSprintSession,
     initScrollAnimations,
+    // Student Dashboard & Sprint Vault
+    getSprintHistory,
+    recordCompletedSprint,
+    openStudentDashboard,
+    closeStudentDashboard,
+    openQuickRecall,
+    closeQuickRecall,
+    switchQuickRecallTab,
+    viewPastProofOfLearning,
+    closePastProofCard,
+    copyPastProofSummary,
     handleFeedbackSubmit,
     openOnboarding,
     showOnboardingModal,
@@ -2329,10 +2907,6 @@ Sprint Verified by BUD-E (Build · Understand · Drill · Evaluate)`;
     acceptBreak,
     resumeFromBreak,
     triggerParentWhatsAppAlert,
-    // Admin Records
-    openAdminRecords,
-    closeAdminRecords,
-    clearAdminRecords,
     // Background Audio Controller
     toggleBackgroundAudio,
     // Mobile & Header Navigation
@@ -2341,9 +2915,11 @@ Sprint Verified by BUD-E (Build · Understand · Drill · Evaluate)`;
     closeMobileNav,
     // CBSE Question Bank
     loadQuestionBank,
+    closeQuestionBankViewer,
     filterQuestionBank,
     // Revision Notes
     loadRevisionNotes,
+    closeRevisionNotesViewer,
     filterRevisionNotes,
     // Auth & Monetization & Paywalls
     openAuthModal,
@@ -2383,6 +2959,7 @@ Sprint Verified by BUD-E (Build · Understand · Drill · Evaluate)`;
     const item = qbData[subjectKey.toLowerCase()];
     if (!item) return;
 
+    const viewer = document.getElementById('qb-viewer-card');
     const frame = document.getElementById('qb-pdf-frame');
     const titleEl = document.getElementById('qb-active-title');
     const metaEl = document.getElementById('qb-active-meta');
@@ -2390,6 +2967,9 @@ Sprint Verified by BUD-E (Build · Understand · Drill · Evaluate)`;
     const newTabBtn = document.getElementById('qb-newtab-btn');
 
     const pdfPath = 'assets/question-bank/' + item.file;
+    if (viewer) {
+      viewer.style.display = 'block';
+    }
     if (frame) frame.src = pdfPath;
     if (titleEl) titleEl.textContent = item.title;
     if (metaEl) metaEl.textContent = item.meta;
@@ -2410,12 +2990,23 @@ Sprint Verified by BUD-E (Build · Understand · Drill · Evaluate)`;
       }
     });
 
-    if (scroll) {
-      const viewer = document.getElementById('qb-viewer-card');
-      if (viewer) {
+    if (scroll && viewer) {
+      setTimeout(() => {
         viewer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
+      }, 50);
     }
+  }
+
+  function closeQuestionBankViewer() {
+    const viewer = document.getElementById('qb-viewer-card');
+    const frame = document.getElementById('qb-pdf-frame');
+    if (viewer) {
+      viewer.style.display = 'none';
+    }
+    if (frame) {
+      frame.src = '';
+    }
+    document.querySelectorAll('.qb-card').forEach(c => c.classList.remove('active-preview'));
   }
 
   function filterQuestionBank(stream, btnEl) {
@@ -2453,6 +3044,7 @@ Sprint Verified by BUD-E (Build · Understand · Drill · Evaluate)`;
     const item = rnData[subjectKey.toLowerCase()];
     if (!item) return;
 
+    const viewer = document.getElementById('rn-viewer-card');
     const frame = document.getElementById('rn-pdf-frame');
     const titleEl = document.getElementById('rn-active-title');
     const metaEl = document.getElementById('rn-active-meta');
@@ -2460,6 +3052,9 @@ Sprint Verified by BUD-E (Build · Understand · Drill · Evaluate)`;
     const newTabBtn = document.getElementById('rn-newtab-btn');
 
     const pdfPath = 'assets/notes/' + item.file;
+    if (viewer) {
+      viewer.style.display = 'block';
+    }
     if (frame) frame.src = pdfPath;
     if (titleEl) titleEl.textContent = item.title;
     if (metaEl) metaEl.textContent = item.meta;
@@ -2480,12 +3075,23 @@ Sprint Verified by BUD-E (Build · Understand · Drill · Evaluate)`;
       }
     });
 
-    if (scroll) {
-      const viewer = document.getElementById('rn-viewer-card');
-      if (viewer) {
+    if (scroll && viewer) {
+      setTimeout(() => {
         viewer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
+      }, 50);
     }
+  }
+
+  function closeRevisionNotesViewer() {
+    const viewer = document.getElementById('rn-viewer-card');
+    const frame = document.getElementById('rn-pdf-frame');
+    if (viewer) {
+      viewer.style.display = 'none';
+    }
+    if (frame) {
+      frame.src = '';
+    }
+    document.querySelectorAll('.rn-card').forEach(c => c.classList.remove('active-preview'));
   }
 
   function filterRevisionNotes(stream, btnEl) {
@@ -2504,64 +3110,59 @@ Sprint Verified by BUD-E (Build · Understand · Drill · Evaluate)`;
   }
 
   /**
-   * Background Video Audio Toggle (Mute / Unmute)
+   * Background Audio Controller - Safe no-op kept for backwards compatibility
    */
   function toggleBackgroundAudio() {
-    const video = document.getElementById('site-bg-video');
-    const icon = document.getElementById('audio-toggle-icon');
-    const text = document.getElementById('audio-toggle-text');
-    const btn = document.getElementById('btn-audio-toggle');
-    if (!video) return;
-
-    if (video.muted) {
-      video.muted = false;
-      video.play().catch(e => console.warn('[BUD-E Audio] Playback resumed:', e));
-      if (icon) icon.textContent = '🔊';
-      if (text) text.textContent = 'Sound: On';
-      if (btn) btn.classList.add('audio-on');
-    } else {
-      video.muted = true;
-      if (icon) icon.textContent = '🔇';
-      if (text) text.textContent = 'Sound: Off';
-      if (btn) btn.classList.remove('audio-on');
-    }
+    // No-op: static background image is active
   }
 
   /**
-   * Resilient Video Autoplay for Mobile & Low-Power Modes
+   * Navigation Guards for Active Sprints
+   * Warns student before abandoning an in-progress sprint if they click logo or nav links,
+   * cleanly resetting sprint session upon confirmed exit.
    */
-  function initMobileVideoResilience() {
-    const video = document.getElementById('site-bg-video');
-    if (!video) return;
-
-    // Mobile Safari & Chrome require muted to be set as a direct DOM property
-    video.muted = true;
-
-    const playPromise = video.play();
-    if (playPromise !== undefined) {
-      playPromise.catch(() => {
-        // Autoplay policy or low-power mode blocked initial play
-        // Resume seamlessly on student's first tap, touch, or scroll
-        const resumeOnFirstInteraction = () => {
-          if (video.paused) {
-            video.muted = true;
-            video.play().catch(() => {});
-          }
-        };
-        ['touchstart', 'touchend', 'click', 'scroll'].forEach(evt => {
-          window.addEventListener(evt, resumeOnFirstInteraction, { once: true, passive: true });
-        });
+  function initSprintNavigationGuards() {
+    // Brand Logo
+    const brand = document.querySelector('.nav-brand');
+    if (brand) {
+      brand.addEventListener('click', (e) => {
+        const sprintContainer = document.getElementById('view-sprint-container');
+        if (sprintContainer && sprintContainer.style.display !== 'none') {
+          e.preventDefault();
+          returnToHome();
+        }
       });
     }
+
+    // Header and Mobile Nav links
+    document.querySelectorAll('.nav-links a, .mobile-dropdown-links a').forEach(link => {
+      link.addEventListener('click', (e) => {
+        const href = link.getAttribute('href') || '';
+        if (href.startsWith('#') && href !== '#plans') {
+          const sprintContainer = document.getElementById('view-sprint-container');
+          if (sprintContainer && sprintContainer.style.display !== 'none') {
+            e.preventDefault();
+            if (confirm('Leave this learning sprint and return to the BUD-E homepage? Your progress will be saved in your log.')) {
+              returnToHome(true);
+              const targetId = href.substring(1);
+              const targetEl = document.getElementById(targetId);
+              if (targetEl) {
+                setTimeout(() => targetEl.scrollIntoView({ behavior: 'smooth' }), 60);
+              }
+            }
+          }
+        }
+      });
+    });
   }
 
   // On DOM Ready
   document.addEventListener('DOMContentLoaded', () => {
     initScrollAnimations();
+    initSprintNavigationGuards();
     updatePreviewCardDate();
     loadPersistedMonetization();
-    initMobileVideoResilience();
-    console.log('[BUD-E] Platform initialized successfully.');
+    console.log('[BUD-E] Platform initialized with high-performance static background and porcelain UI.');
   });
 
 })(window, document);

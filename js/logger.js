@@ -43,6 +43,9 @@
         referrer: document.referrer || 'Direct'
       }, payload);
 
+      // Sanitize feedback column: Strictly allow ONLY user-submitted comments from the feedback form
+      entry.feedback = (typeof payload.feedback === 'string' && payload.feedback.trim()) ? payload.feedback.trim() : '';
+
       console.log('[BUD-E Analytics] Logging event:', entry);
 
       // 1. Persistent Local Storage Backup
